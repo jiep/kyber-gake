@@ -15,3 +15,11 @@ docker build -t kyber .
 ```bash
 docker run kyber
 ```
+
+## Development
+
+1. Run
+
+```bash
+docker run -it -v `pwd`:/kyber kyber bash
+```
