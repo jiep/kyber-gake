@@ -9,6 +9,12 @@
 
 #define getName(var)  #var
 
+int mod(int x, int y){
+   int t = x - ((x / y) * y);
+   if (t < 0) t += y;
+   return t;
+}
+
 void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out){
 
   for (int j = 0; j < KEX_SSBYTES; j++) {
@@ -105,11 +111,21 @@ int main(void)
 
   unsigned char x_check[KEX_SSBYTES];
 
-  unsigned char key_a[KEX_SSBYTES];
-  unsigned char key_b[KEX_SSBYTES];
-  unsigned char key_c[KEX_SSBYTES];
+  unsigned char keya_a[KEX_SSBYTES];
+  unsigned char keya_b[KEX_SSBYTES];
+  unsigned char keya_c[KEX_SSBYTES];
 
-  unsigned char master_key[3*KEX_SSBYTES];
+  unsigned char keyb_a[KEX_SSBYTES];
+  unsigned char keyb_b[KEX_SSBYTES];
+  unsigned char keyb_c[KEX_SSBYTES];
+
+  unsigned char keyc_a[KEX_SSBYTES];
+  unsigned char keyc_b[KEX_SSBYTES];
+  unsigned char keyc_c[KEX_SSBYTES];
+
+  unsigned char master_key_a[3*KEX_SSBYTES];
+  unsigned char master_key_b[3*KEX_SSBYTES];
+  unsigned char master_key_c[3*KEX_SSBYTES];
 
 
   unsigned char zero[KEX_SSBYTES];
@@ -180,10 +196,10 @@ int main(void)
   // ----------------------------------------------- B
   printf("Party B\n");
 
-  // // B -> C
+  // // B -> C (right)
   printf("\t B -> C\n");
-  two_ake(&pkb, &pkc, &skb, &skc, &kb_left, kb);
-  result = check_keys(&kb_left, &kb, &zero);
+  two_ake(&pkb, &pkc, &skb, &skc, &kb_right, kb);
+  result = check_keys(&kb_right, &kb, &zero);
   printf("\t\tResult: %d\n", result);
   switch (result) {
     case 1:
@@ -195,13 +211,13 @@ int main(void)
     default:
       break;
   }
-  printf("\t\t\t%s: ", getName(kb_left));
-  print_key(&kb_left, KEX_SSBYTES);
+  printf("\t\t\t%s: ", getName(kb_right));
+  print_key(&kb_right, KEX_SSBYTES);
 
   printf("\t\t\t%s: ", getName(kb));
   print_key(&kb, KEX_SSBYTES);
 
-  // // B -> A
+  // // B -> A (left)
   printf("\t B -> A\n");
   // two_ake(&pkb, &pka, &skb, &ska, &kb_right, kb);
   // result = check_keys(&kb_right, &kb, &zero);
@@ -216,10 +232,10 @@ int main(void)
   //   default:
   //     break;
   // }
-  memcpy(&kb_right, &ka_left, KEX_SSBYTES);
+  memcpy(&kb_left, &ka_right, KEX_SSBYTES);
 
   printf("\t\t\t%s: ", getName(kb_right));
-  print_key(&kb_right, KEX_SSBYTES);
+  print_key(&kb_left, KEX_SSBYTES);
 
   // printf("\t\t\t%s: ", getName(kb));
   // print_key(&kb, KEX_SSBYTES);
@@ -233,7 +249,7 @@ int main(void)
   // ----------------------------------------------- B
   printf("Party C\n");
 
-  // // C -> A
+  // // C -> A (right)
   printf("\t C -> A\n");
   // two_ake(&pkc, &pka, &skc, &ska, &kc_left, kc);
   // result = check_keys(&kc_left, &kc, &zero);
@@ -248,14 +264,14 @@ int main(void)
   //   default:
   //     break;
   // }
-  memcpy(&kc_left, &ka_right, KEX_SSBYTES);
-  printf("\t\t\t%s: ", getName(kc_left));
-  print_key(&kc_left, KEX_SSBYTES);
+  memcpy(&kc_right, &ka_left, KEX_SSBYTES);
+  printf("\t\t\t%s: ", getName(kc_right));
+  print_key(&kc_right, KEX_SSBYTES);
 
   // printf("\t\t\t%s: ", getName(kc));
   // print_key(&kc, KEX_SSBYTES);
 
-  // // C -> B
+  // // C -> B (left)
   printf("\t C -> B\n");
   // two_ake(&pkc, &pkb, &skc, &skb, &kc_right, kc);
   // result = check_keys(&kc_right, &kc, &zero);
@@ -270,9 +286,9 @@ int main(void)
   //   default:
   //     break;
   // }
-  memcpy(&kc_right, &kb_left, KEX_SSBYTES);
-  printf("\t\t\t%s: ", getName(kc_right));
-  print_key(&kc_right, KEX_SSBYTES);
+  memcpy(&kc_left, &kb_right, KEX_SSBYTES);
+  printf("\t\t\t%s: ", getName(kc_left));
+  print_key(&kc_left, KEX_SSBYTES);
 
   // printf("\t\t\t%s: ", getName(kc));
   // print_key(&kc, KEX_SSBYTES);
@@ -346,25 +362,102 @@ int main(void)
   if(!result) printf("Wrong check!\n");
   else printf("Right check!\n");
 
-  xor_keys(ka_left, x_c, key_c);
-  xor_keys(kc_left, x_b, key_b);
-  xor_keys(kb_left, x_a, key_a);
+  printf("Master key\n");
 
-  printf("Master key:\n");
-  print_master_key(key_a, key_b, key_c, KEX_SSBYTES);
+  // Party A
+  printf("Party A\n");
+
+  // keya_a
+  memcpy(keya_a, ka_left, KEX_SSBYTES);
+  printf("\t K_a: ");
+  print_key(keya_a, KEX_SSBYTES);
+
+  // keya_b
+  xor_three_keys(ka_left, x_c, x_b, keya_b);
+  printf("\t K_b: ");
+  print_key(keya_b, KEX_SSBYTES);
+
+  // keya_c
+  xor_keys(ka_left, x_c, keya_c);
+  printf("\t K_c: ");
+  print_key(keya_c, KEX_SSBYTES);
 
   // Concat master key
   // TODO: Add pid_i
-  memcpy(master_key, key_a, KEX_SSBYTES);
-  memcpy(master_key + KEX_SSBYTES, key_b, KEX_SSBYTES);
-  memcpy(master_key + 2*KEX_SSBYTES, key_c, KEX_SSBYTES);
+  memcpy(master_key_a, keya_a, KEX_SSBYTES);
+  memcpy(master_key_a + KEX_SSBYTES, keya_b, KEX_SSBYTES);
+  memcpy(master_key_a + 2*KEX_SSBYTES, keya_c, KEX_SSBYTES);
 
-  printf("Concat master key\n");
-  print_key(master_key, 3*KEX_SSBYTES);
+  printf("Master key: ");
+  print_key(master_key_a, 3*KEX_SSBYTES);
+
+
+  // Party B
+  printf("Party B\n");
+
+  // keyb_a
+  xor_keys(kb_left, x_a, keyb_a);
+  printf("\t K_a: ");
+  print_key(keyb_a, KEX_SSBYTES);
+
+  // keyb_b
+  memcpy(keyb_b, kb_left, KEX_SSBYTES);
+  printf("\t K_b: ");
+  print_key(keyb_b, KEX_SSBYTES);
+
+  // keyb_c
+  xor_three_keys(kb_left, x_a, x_c, keyb_c);
+  printf("\t K_c: ");
+  print_key(keyb_c, KEX_SSBYTES);
+
+  // Concat master key
+  // TODO: Add pid_i
+  memcpy(master_key_b, keyb_a, KEX_SSBYTES);
+  memcpy(master_key_b + KEX_SSBYTES, keyb_b, KEX_SSBYTES);
+  memcpy(master_key_b + 2*KEX_SSBYTES, keyb_c, KEX_SSBYTES);
+
+  printf("Master key: ");
+  print_key(master_key_b, 3*KEX_SSBYTES);
+
+
+  // Party C
+  printf("Party C\n");
+
+  // keyc_a
+  xor_three_keys(kc_left, x_b, x_a, keyc_a);
+  printf("\t K_a: ");
+  print_key(keyc_a, KEX_SSBYTES);
+
+  // keyc_b
+  xor_keys(kc_left, x_b, keyc_b);
+  printf("\t K_b: ");
+  print_key(keyc_b, KEX_SSBYTES);
+
+  // keyc_c
+  memcpy(keyc_c, kc_left, KEX_SSBYTES);
+  printf("\t K_c: ");
+  print_key(keyc_c, KEX_SSBYTES);
+
+  // Concat master key
+  // TODO: Add pid_i
+  memcpy(master_key_c, keyc_a, KEX_SSBYTES);
+  memcpy(master_key_c + KEX_SSBYTES, keyc_b, KEX_SSBYTES);
+  memcpy(master_key_c + 2*KEX_SSBYTES, keyc_c, KEX_SSBYTES);
+
+  printf("Master key: ");
+  print_key(master_key_c, 3*KEX_SSBYTES);
+
+  int ret1 = strcmp(master_key_a,master_key_b);
+  int ret2 = strcmp(master_key_b, master_key_c);
+
+  if (ret1 == ret2) {
+    printf("Master keys are equal\n");
+  }
+
 
   unsigned char sk_sid[2*KEX_SSBYTES];
 
-  hash_g(sk_sid, master_key, 2*KYBER_SYMBYTES);
+  hash_g(sk_sid, master_key_a, 2*KYBER_SYMBYTES);
 
   printf("SK & SID\n");
 
@@ -375,7 +468,10 @@ int main(void)
   printf("SID: ");
   print_key_start(sk_sid, 2*KEX_SSBYTES, KEX_SSBYTES);
 
+
+
   return 0;
+
 }
 
 
