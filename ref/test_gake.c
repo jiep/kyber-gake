@@ -57,11 +57,13 @@ void print_master_key(uint8_t *key_a, uint8_t *key_b, uint8_t *key_c, int length
 }
 
 int check_keys(uint8_t *ka, uint8_t *kb, uint8_t *zero) {
-  if(!memcmp(ka, kb, KEX_SSBYTES))
+  if(memcmp(ka, kb, KEX_SSBYTES) != 0){
     return 1;
+  }
 
-  if(!memcmp(ka, zero, KEX_SSBYTES))
+  if(!memcmp(ka, zero, KEX_SSBYTES)){
     return 2;
+  }
 
   return 0;
 }
@@ -93,15 +95,12 @@ int main(void)
   unsigned char skc[CRYPTO_SECRETKEYBYTES];
 
 
-  unsigned char ka[KEX_SSBYTES];
   unsigned char ka_left[KEX_SSBYTES];
   unsigned char ka_right[KEX_SSBYTES];
 
-  unsigned char kb[KEX_SSBYTES];
   unsigned char kb_left[KEX_SSBYTES];
   unsigned char kb_right[KEX_SSBYTES];
 
-  unsigned char kc[KEX_SSBYTES];
   unsigned char kc_left[KEX_SSBYTES];
   unsigned char kc_right[KEX_SSBYTES];
 
@@ -134,10 +133,8 @@ int main(void)
   for(int i=0;i<KEX_SSBYTES;i++)
     zero[i] = 0;
 
-  crypto_kem_keypair(pkb, skb); // B
-
   crypto_kem_keypair(pka, ska); // A
-
+  crypto_kem_keypair(pkb, skb); // B
   crypto_kem_keypair(pkc, skc); // C
 
 
@@ -146,15 +143,15 @@ int main(void)
 
   // // A -> C (left)
   printf("\t A -> C\n");
-  two_ake(&pka, &pkc, &ska, &skc, &ka_left, ka);
-  result = check_keys(&ka_left, &kb, &zero);
+  two_ake(&pka, &pkc, &ska, &skc, &ka_left, &kc_right);
+  result = check_keys(ka_left, kc_right, zero);
   printf("\t\tResult: %d\n", result);
   switch (result) {
     case 1:
       printf("\t\t\tKeys are not equal!\n");
       break;
     case 2:
-      printf("\t\t\tKey are zero!\n");
+      printf("\t\t\tKey is zero!\n");
       break;
     default:
       break;
@@ -162,13 +159,13 @@ int main(void)
   printf("\t\t\t%s: ", getName(ka_left));
   print_key(&ka_left, KEX_SSBYTES);
 
-  printf("\t\t\t%s: ", getName(ka));
-  print_key(&ka, KEX_SSBYTES);
+  printf("\t\t\t%s: ", getName(kc_right));
+  print_key(&kc_right, KEX_SSBYTES);
 
   // // A -> B (right)
   printf("\t A -> B\n");
-  two_ake(&pka, &pkb, &ska, &skb, &ka_right, ka);
-  result = check_keys(&ka_right, &kb, &zero);
+  two_ake(&pka, &pkb, &ska, &skb, &ka_right, &kb_left);
+  result = check_keys(&ka_right, &kb_left, &zero);
   printf("\t\tResult: %d\n", result);
   switch (result) {
     case 1:
@@ -184,13 +181,13 @@ int main(void)
   printf("\t\t\t%s: ", getName(ka_right));
   print_key(&ka_right, KEX_SSBYTES);
 
-  printf("\t\t\t%s: ", getName(ka));
-  print_key(&ka, KEX_SSBYTES);
+  printf("\t\t\t%s: ", getName(kb_left));
+  print_key(&kb_left, KEX_SSBYTES);
 
   // XOR keys
-  printf("\t\t\tXored key\n");
+  printf("\t\tXored key\n");
   xor_keys(&ka_left, &ka_right, &x_a);
-  printf("\t\t\t\t%s: ", getName(x_a));
+  printf("\t\t\t%s: ", getName(x_a));
   print_key(&x_a, KEX_SSBYTES);
 
   // ----------------------------------------------- B
@@ -198,8 +195,8 @@ int main(void)
 
   // // B -> C (right)
   printf("\t B -> C\n");
-  two_ake(&pkb, &pkc, &skb, &skc, &kb_right, kb);
-  result = check_keys(&kb_right, &kb, &zero);
+  two_ake(&pkb, &pkc, &skb, &skc, &kb_right, &kc_left);
+  result = check_keys(&kb_right, &kc_left, &zero);
   printf("\t\tResult: %d\n", result);
   switch (result) {
     case 1:
@@ -214,25 +211,12 @@ int main(void)
   printf("\t\t\t%s: ", getName(kb_right));
   print_key(&kb_right, KEX_SSBYTES);
 
-  printf("\t\t\t%s: ", getName(kb));
-  print_key(&kb, KEX_SSBYTES);
+  printf("\t\t\t%s: ", getName(kc_left));
+  print_key(&kc_left, KEX_SSBYTES);
 
   // // B -> A (left)
   printf("\t B -> A\n");
-  // two_ake(&pkb, &pka, &skb, &ska, &kb_right, kb);
-  // result = check_keys(&kb_right, &kb, &zero);
-  // printf("\t\tResult: %d\n", result);
-  // switch (result) {
-  //   case 1:
-  //     printf("\t\t\tKeys are not equal!\n");
-  //     break;
-  //   case 2:
-  //     printf("\t\t\tKey are zero!\n");
-  //     break;
-  //   default:
-  //     break;
-  // }
-  memcpy(&kb_left, &ka_right, KEX_SSBYTES);
+  // memcpy(&kb_left, &ka_right, KEX_SSBYTES);
 
   printf("\t\t\t%s: ", getName(kb_right));
   print_key(&kb_left, KEX_SSBYTES);
@@ -241,9 +225,9 @@ int main(void)
   // print_key(&kb, KEX_SSBYTES);
 
   // XOR keys
-  printf("\t\t\tXored key\n");
+  printf("\t\tXored key\n");
   xor_keys(&kb_left, &kb_right, &x_b);
-  printf("\t\t\t\t%s: ", getName(x_b));
+  printf("\t\t\t%s: ", getName(x_b));
   print_key(&x_b, KEX_SSBYTES);
 
   // ----------------------------------------------- B
@@ -251,42 +235,13 @@ int main(void)
 
   // // C -> A (right)
   printf("\t C -> A\n");
-  // two_ake(&pkc, &pka, &skc, &ska, &kc_left, kc);
-  // result = check_keys(&kc_left, &kc, &zero);
-  // printf("\t\tResult: %d\n", result);
-  // switch (result) {
-  //   case 1:
-  //     printf("\t\t\tKeys are not equal!\n");
-  //     break;
-  //   case 2:
-  //     printf("\t\t\tKey are zero!\n");
-  //     break;
-  //   default:
-  //     break;
-  // }
-  memcpy(&kc_right, &ka_left, KEX_SSBYTES);
+  // memcpy(&kc_right, &ka_left, KEX_SSBYTES);
   printf("\t\t\t%s: ", getName(kc_right));
   print_key(&kc_right, KEX_SSBYTES);
 
-  // printf("\t\t\t%s: ", getName(kc));
-  // print_key(&kc, KEX_SSBYTES);
-
   // // C -> B (left)
   printf("\t C -> B\n");
-  // two_ake(&pkc, &pkb, &skc, &skb, &kc_right, kc);
-  // result = check_keys(&kc_right, &kc, &zero);
-  // printf("\t\tResult: %d\n", result);
-  // switch (result) {
-  //   case 1:
-  //     printf("\t\t\tKeys are not equal!\n");
-  //     break;
-  //   case 2:
-  //     printf("\t\t\tKey are zero!\n");
-  //     break;
-  //   default:
-  //     break;
-  // }
-  memcpy(&kc_left, &kb_right, KEX_SSBYTES);
+  // memcpy(&kc_left, &kb_right, KEX_SSBYTES);
   printf("\t\t\t%s: ", getName(kc_left));
   print_key(&kc_left, KEX_SSBYTES);
 
@@ -294,9 +249,9 @@ int main(void)
   // print_key(&kc, KEX_SSBYTES);
 
   // XOR keys
-  printf("\t\t\tXored key\n");
+  printf("\t\tXored key\n");
   xor_keys(&kc_left, &kc_right, &x_c);
-  printf("\t\t\t\t%s: ", getName(x_c));
+  printf("\t\t\t%s: ", getName(x_c));
   print_key(&x_c, KEX_SSBYTES);
 
   // Commitment
