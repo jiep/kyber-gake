@@ -7,6 +7,7 @@ set(PQCKAT_SRCS PQCgenKAT_kem.c rng.c)
 set(AES_FILES aes256ctr.c)
 set(KECCAK_FILES fips202.c sha256.c sha512.c)
 set(AES_SRCS ${SRCS} symmetric-aes.c)
+set(GAKE3_FILES ${SRCS} kex.c randombytes.c test_gake3.c)
 set(GAKE_FILES ${SRCS} kex.c randombytes.c test_gake.c)
 
 
@@ -62,6 +63,14 @@ foreach(X RANGE 2 4)
    add_executable(test_kex${K${X}}_ref ${TESTKEX_SRCS})
    target_link_libraries(test_kex${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
    #add_test(test_kex${K${{X}}_ref test_kex${K${X}}_ref)
+
+	 # Plain GAKE
+   add_executable(test_gake${K${X}}_ref ${GAKE_FILES})
+   target_link_libraries(test_gake${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+
+	 # Plain GAKE
+   add_executable(test_gake3-${K${X}}_ref ${GAKE3_FILES})
+   target_link_libraries(test_gake3-${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
 
    # Plain speed
    if(NOT WIN32)
