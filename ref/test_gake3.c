@@ -5,36 +5,18 @@
 #include "kex.h"
 #include "indcpa.h"
 #include "symmetric.h"
+#include "randombytes.h"
+#include "gake.h"
 
-
-#define getName(var)  #var
-
-// // https://cboard.cprogramming.com/c-programming/101643-mod-negatives.html
-int mod(int x, int y){
-   int t = x - ((x / y) * y);
-   if (t < 0) t += y;
-   return t;
-}
-
-void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out){
-
-  for (int j = 0; j < KEX_SSBYTES; j++) {
-    x_out[j] = x_a[j] ^ x_b[j];
-  }
-}
+void xor_three_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_c, uint8_t *x_out);
+void print_key_start(uint8_t *key, int length, int start);
+void print_master_key(uint8_t *key_a, uint8_t *key_b, uint8_t *key_c, int length);
 
 void xor_three_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_c, uint8_t *x_out){
 
   for (int j = 0; j < KEX_SSBYTES; j++) {
     x_out[j] = x_a[j] ^ x_b[j] ^ x_c[j];
   }
-}
-
-void print_key(uint8_t *key, int length) {
-  for(int j = 0; j < length; j++){
-    printf("%02x", key[j]);
-  }
-  printf("\n");
 }
 
 void print_key_start(uint8_t *key, int length, int start) {
@@ -57,35 +39,8 @@ void print_master_key(uint8_t *key_a, uint8_t *key_b, uint8_t *key_c, int length
   printf("\n");
 }
 
-int check_keys(uint8_t *ka, uint8_t *kb, uint8_t *zero) {
-  if(memcmp(ka, kb, KEX_SSBYTES) != 0){
-    return 1;
-  }
+int main(void) {
 
-  if(!memcmp(ka, zero, KEX_SSBYTES)){
-    return 2;
-  }
-
-  return 0;
-}
-
-void two_ake(uint8_t *pka, uint8_t *pkb, uint8_t *ska, uint8_t *skb, uint8_t *ka, uint8_t *kb){
-
-  unsigned char eska[CRYPTO_SECRETKEYBYTES];
-
-  unsigned char ake_senda[KEX_AKE_SENDABYTES];
-  unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
-
-  unsigned char tk[KEX_SSBYTES];
-
-  // Perform mutually authenticated key exchange
-  kex_ake_initA(ake_senda, tk, eska, pkb); // Run by Alice
-  kex_ake_sharedB(ake_sendb, kb, ake_senda, skb, pka); // Run by Bob
-  kex_ake_sharedA(ka, ake_sendb, tk, eska, ska); // Run by Alice
-}
-
-int main(void)
-{
   unsigned char pkb[CRYPTO_PUBLICKEYBYTES];
   unsigned char skb[CRYPTO_SECRETKEYBYTES];
 
@@ -144,7 +99,7 @@ int main(void)
 
   // // A -> C (left)
   printf("\t A -> C\n");
-  two_ake(&pka, &pkc, &ska, &skc, &ka_left, &kc_right);
+  two_ake(pka, pkc, ska, skc, ka_left, kc_right);
   result = check_keys(ka_left, kc_right, zero);
   printf("\t\tResult: %d\n", result);
   switch (result) {
@@ -158,15 +113,15 @@ int main(void)
       break;
   }
   printf("\t\t\t%s: ", getName(ka_left));
-  print_key(&ka_left, KEX_SSBYTES);
+  print_key(ka_left, KEX_SSBYTES);
 
   printf("\t\t\t%s: ", getName(kc_right));
-  print_key(&kc_right, KEX_SSBYTES);
+  print_key(kc_right, KEX_SSBYTES);
 
   // // A -> B (right)
   printf("\t A -> B\n");
-  two_ake(&pka, &pkb, &ska, &skb, &ka_right, &kb_left);
-  result = check_keys(&ka_right, &kb_left, &zero);
+  two_ake(pka, pkb, ska, skb, ka_right, kb_left);
+  result = check_keys(ka_right, kb_left, zero);
   printf("\t\tResult: %d\n", result);
   switch (result) {
     case 1:
@@ -180,24 +135,24 @@ int main(void)
   }
 
   printf("\t\t\t%s: ", getName(ka_right));
-  print_key(&ka_right, KEX_SSBYTES);
+  print_key(ka_right, KEX_SSBYTES);
 
   printf("\t\t\t%s: ", getName(kb_left));
-  print_key(&kb_left, KEX_SSBYTES);
+  print_key(kb_left, KEX_SSBYTES);
 
   // XOR keys
   printf("\t\tXored key\n");
-  xor_keys(&ka_left, &ka_right, &x_a);
+  xor_keys(ka_left, ka_right, x_a);
   printf("\t\t\t%s: ", getName(x_a));
-  print_key(&x_a, KEX_SSBYTES);
+  print_key(x_a, KEX_SSBYTES);
 
   // ----------------------------------------------- B
   printf("Party B\n");
 
   // // B -> C (right)
   printf("\t B -> C\n");
-  two_ake(&pkb, &pkc, &skb, &skc, &kb_right, &kc_left);
-  result = check_keys(&kb_right, &kc_left, &zero);
+  two_ake(pkb, pkc, skb, skc, kb_right, kc_left);
+  result = check_keys(kb_right, kc_left, zero);
   printf("\t\tResult: %d\n", result);
   switch (result) {
     case 1:
@@ -210,26 +165,26 @@ int main(void)
       break;
   }
   printf("\t\t\t%s: ", getName(kb_right));
-  print_key(&kb_right, KEX_SSBYTES);
+  print_key(kb_right, KEX_SSBYTES);
 
   printf("\t\t\t%s: ", getName(kc_left));
-  print_key(&kc_left, KEX_SSBYTES);
+  print_key(kc_left, KEX_SSBYTES);
 
   // // B -> A (left)
   printf("\t B -> A\n");
   // memcpy(&kb_left, &ka_right, KEX_SSBYTES);
 
   printf("\t\t\t%s: ", getName(kb_right));
-  print_key(&kb_left, KEX_SSBYTES);
+  print_key(kb_left, KEX_SSBYTES);
 
   // printf("\t\t\t%s: ", getName(kb));
   // print_key(&kb, KEX_SSBYTES);
 
   // XOR keys
   printf("\t\tXored key\n");
-  xor_keys(&kb_left, &kb_right, &x_b);
+  xor_keys(kb_left, kb_right, x_b);
   printf("\t\t\t%s: ", getName(x_b));
-  print_key(&x_b, KEX_SSBYTES);
+  print_key(x_b, KEX_SSBYTES);
 
   // ----------------------------------------------- B
   printf("Party C\n");
@@ -238,22 +193,22 @@ int main(void)
   printf("\t C -> A\n");
   // memcpy(&kc_right, &ka_left, KEX_SSBYTES);
   printf("\t\t\t%s: ", getName(kc_right));
-  print_key(&kc_right, KEX_SSBYTES);
+  print_key(kc_right, KEX_SSBYTES);
 
   // // C -> B (left)
   printf("\t C -> B\n");
   // memcpy(&kc_left, &kb_right, KEX_SSBYTES);
   printf("\t\t\t%s: ", getName(kc_left));
-  print_key(&kc_left, KEX_SSBYTES);
+  print_key(kc_left, KEX_SSBYTES);
 
   // printf("\t\t\t%s: ", getName(kc));
   // print_key(&kc, KEX_SSBYTES);
 
   // XOR keys
   printf("\t\tXored key\n");
-  xor_keys(&kc_left, &kc_right, &x_c);
+  xor_keys(kc_left, kc_right, x_c);
   printf("\t\t\t%s: ", getName(x_c));
-  print_key(&x_c, KEX_SSBYTES);
+  print_key(x_c, KEX_SSBYTES);
 
   // Commitment
   uint8_t commit_pka[KYBER_INDCPA_PUBLICKEYBYTES];
@@ -403,8 +358,8 @@ int main(void)
   printf("Master key: ");
   print_key(master_key_c, 3*KEX_SSBYTES);
 
-  int ret1 = strcmp(master_key_a,master_key_b);
-  int ret2 = strcmp(master_key_b, master_key_c);
+  int ret1 = memcmp(master_key_a, master_key_b, 3*KEX_SSBYTES);
+  int ret2 = memcmp(master_key_b, master_key_c, 3*KEX_SSBYTES);
 
   if (ret1 == ret2) {
     printf("Master keys are equal\n");

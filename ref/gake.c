@@ -9,6 +9,7 @@
 #include "symmetric.h"
 #include "gake.h"
 
+// https://cboard.cprogramming.com/c-programming/101643-mod-negatives.html
 int mod(int x, int y){
    int t = x - ((x / y) * y);
    if (t < 0) t += y;
@@ -24,13 +25,6 @@ void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out){
 
 void print_key(uint8_t *key, int length) {
   for(int j = 0; j < length; j++){
-    printf("%02x", key[j]);
-  }
-  printf("\n");
-}
-
-void print_key_start(uint8_t *key, int length, int start) {
-  for(int j = start; j < length; j++){
     printf("%02x", key[j]);
   }
   printf("\n");
