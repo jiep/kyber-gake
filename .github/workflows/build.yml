@@ -46,6 +46,8 @@ jobs:
       run: |
         set -x
         assets=()
+        ls -lah .
+        ls -lah ./build/ref/test*
         for asset in ./build/ref/test*; do
           assets+=("-a" "$asset")
         done
