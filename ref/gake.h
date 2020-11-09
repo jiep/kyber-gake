@@ -16,6 +16,8 @@ typedef struct Party {
     Commitment* commitments;
     MasterKey* masterkey;
     Pid* pids;
+    uint8_t acc;
+    uint8_t term;
 } Party;
 
 #define getName(var)  #var

@@ -48,6 +48,8 @@ int main(int argc, char** argv){
       printf("\t\tXi are zero!\n");
     } else {
       printf("\t\tXi are not zero!\n");
+      pointer_to_parties[i].acc = 0;
+      pointer_to_parties[i].term = 1;
       return 1;
     }
 
@@ -55,6 +57,8 @@ int main(int argc, char** argv){
       printf("\t\tCommitments are correct!\n");
     } else {
       printf("\t\tCommitments are not correct!\n");
+      pointer_to_parties[i].acc = 0;
+      pointer_to_parties[i].term = 1;
       return 1;
     }
   }

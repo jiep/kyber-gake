@@ -83,19 +83,19 @@ void concat_masterkey(MasterKey* mk, int num_parties, uint8_t *concat_mk) {
 void print_party(Party* parties, int i, int num_parties, int show) {
   printf("Party %d\n", i);
 
-  printf("\tPublic key: ");
+  printf("\tPublic key:  ");
   print_short_key(parties[i].public_key, CRYPTO_PUBLICKEYBYTES, show);
 
-  printf("\tSecret key: ");
+  printf("\tSecret key:  ");
   print_short_key(parties[i].secret_key, CRYPTO_SECRETKEYBYTES, show);
 
-  printf("\tLeft key: ");
+  printf("\tLeft key:    ");
   print_short_key(parties[i].key_left, KEX_SSBYTES, show);
 
-  printf("\tRight key: ");
+  printf("\tRight key:   ");
   print_short_key(parties[i].key_right, KEX_SSBYTES, show);
 
-  printf("\tSession id: ");
+  printf("\tSession id:  ");
   print_short_key(parties[i].sid, KEX_SSBYTES, show);
 
   printf("\tSession key: ");
@@ -129,6 +129,9 @@ void print_party(Party* parties, int i, int num_parties, int show) {
   for (int j = 0; j < num_parties; j++) {
     printf("\t\tpid%d: %s\n", j, *parties[i].pids[j]);
   }
+
+  printf("\tAccepted:   %d\n", parties[i].acc);
+  printf("\tTerminated: %d\n", parties[i].term);
 }
 
 void init_parties(Party* parties, int num_parties) {
@@ -150,6 +153,9 @@ void init_parties(Party* parties, int num_parties) {
 
     crypto_kem_keypair(parties[i].public_key,
                        parties[i].secret_key);
+
+    parties[i].acc = 0;
+    parties[i].term = 0;
 
   }
 }
@@ -182,11 +188,13 @@ void compute_sk_sid(Party* parties, int num_parties) {
 
     hash_g(sk_sid, mki, 2*KEX_SSBYTES);
 
-    printf("sk_sid: ");
     print_short_key(sk_sid, 2*KEX_SSBYTES, 10);
 
     memcpy(parties[i].sk, sk_sid, KEX_SSBYTES);
     memcpy(parties[i].sid, sk_sid + KEX_SSBYTES, KEX_SSBYTES);
+
+    parties[i].acc = 1;
+    parties[i].term = 1;
   }
 }
 
