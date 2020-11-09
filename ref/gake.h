@@ -1,3 +1,11 @@
+#include <time.h>
+
+#include "kex.h"
+#include "indcpa.h"
+#include "randombytes.h"
+#include "api.h"
+#include "symmetric.h"
+
 typedef unsigned char Commitment[KYBER_INDCPA_BYTES];
 typedef unsigned char MasterKey[KEX_SSBYTES];
 typedef unsigned char X[KEX_SSBYTES];
@@ -42,3 +50,8 @@ int check_xs(Party* parties, int i, int num_parties);
 void compute_xs_commitments(Party* parties, int num_parties);
 void compute_left_right_keys(Party* parties, int num_parties);
 int check_all_keys(Party* parties, int num_parties);
+void print_stats(clock_t end_init,
+                 clock_t end_12,
+                 clock_t end_3,
+                 clock_t end_4,
+                 clock_t begin_total);

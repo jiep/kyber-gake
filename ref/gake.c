@@ -1,12 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
-#include "api.h"
-#include "kex.h"
-#include "indcpa.h"
-#include "randombytes.h"
-#include "symmetric.h"
 #include "gake.h"
 
 // https://cboard.cprogramming.com/c-programming/101643-mod-negatives.html
@@ -155,6 +151,7 @@ void init_parties(Party* parties, int num_parties) {
       char* pid = malloc(20*sizeof(char));
       sprintf(pid, "%s %d", "Party", j);
       *(parties[i].pids)[j] = pid;
+      free(pid);
     }
 
     init_to_zero(parties[i].sid, KEX_SSBYTES);
@@ -196,8 +193,6 @@ void compute_sk_sid(Party* parties, int num_parties) {
     unsigned char sk_sid[2*KEX_SSBYTES];
 
     hash_g(sk_sid, mki, 2*KEX_SSBYTES);
-
-    print_short_key(sk_sid, 2*KEX_SSBYTES, 10);
 
     memcpy(parties[i].sk, sk_sid, KEX_SSBYTES);
     memcpy(parties[i].sid, sk_sid + KEX_SSBYTES, KEX_SSBYTES);
@@ -317,4 +312,24 @@ int check_all_keys(Party* parties, int num_parties) {
 
   }
   return 0;
+}
+
+void print_stats(clock_t end_init,
+                 clock_t end_12,
+                 clock_t end_3,
+                 clock_t end_4,
+                 clock_t begin_total) {
+
+   double time_init  = (double)(end_init - begin_total) / CLOCKS_PER_SEC;
+   double time_12    = (double)(end_12 - end_init) / CLOCKS_PER_SEC;
+   double time_3     = (double)(end_3 - end_12) / CLOCKS_PER_SEC;
+   double time_4     = (double)(end_4 - end_3) / CLOCKS_PER_SEC;
+   double time_total = (double)(end_4 - begin_total) / CLOCKS_PER_SEC;
+
+   printf("\n\nTime stats\n");
+   printf("\tInit time      : %.3fs (%.2f%%)\n", time_init, time_init*100/time_total);
+   printf("\tRound 1-2 time : %.3fs (%.2f%%)\n", time_12, time_12*100/time_total);
+   printf("\tRound 3 time   : %.3fs (%.2f%%)\n", time_3, time_3*100/time_total);
+   printf("\tRound 4 time   : %.3fs (%.2f%%)\n", time_4, time_4*100/time_total);
+   printf("\tTotal time     : %.3fs (%.2f%%)\n", time_total, time_total*100/time_total);
 }
