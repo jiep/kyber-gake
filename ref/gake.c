@@ -30,6 +30,15 @@ void print_key(uint8_t *key, int length) {
   printf("\n");
 }
 
+void print_sk(uint8_t *key) {
+  for(int j = 0; j < KEX_SSBYTES; j++){
+    printf("%02x", key[j]);
+  }
+  printf("\n");
+}
+
+
+
 int check_keys(uint8_t *ka, uint8_t *kb, uint8_t *zero) {
   if(memcmp(ka, kb, KEX_SSBYTES) != 0){
     return 1;
@@ -286,4 +295,26 @@ void compute_left_right_keys(Party* parties, int num_parties) {
             parties[i].secret_key, parties[left].secret_key,
             parties[i].key_left,   parties[left].key_right);
   }
+}
+
+int check_all_keys(Party* parties, int num_parties) {
+  unsigned char  sk[KEX_SSBYTES];
+  unsigned char sid[KEX_SSBYTES];
+
+  for (int i = 0; i < num_parties - 1; i++) {
+    memcpy(sk,  parties[i].sk,  KEX_SSBYTES);
+    memcpy(sid, parties[i].sid, KEX_SSBYTES);
+
+    int res_sk  = memcmp(sk, parties[i+1].sk,  KEX_SSBYTES);
+    int res_sid = memcmp(sid, parties[i+1].sid, KEX_SSBYTES);
+
+    if (res_sk != 0 || res_sid != 0) {
+      return 1;
+    }
+
+    memcpy(sk,  parties[i+1].sk,  KEX_SSBYTES);
+    memcpy(sid, parties[i+1].sid, KEX_SSBYTES);
+
+  }
+  return 0;
 }

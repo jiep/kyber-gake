@@ -71,6 +71,21 @@ int main(int argc, char** argv){
   compute_sk_sid(pointer_to_parties, NUM_PARTIES);
   print_parties(pointer_to_parties, NUM_PARTIES, SHOW);
 
+  // Check all keys are correct
+  int res = check_all_keys(pointer_to_parties, NUM_PARTIES);
+
+  if (res == 0) {
+    printf("All keys are equal!\n");
+
+    printf("Session key: ");
+    print_sk(pointer_to_parties[0].sk);
+
+    printf("Session id:  ");
+    print_sk(pointer_to_parties[0].sid);
+  } else {
+    printf("All keys are NOT equal!\n");
+  }
+
   // Free resources
   free_parties(pointer_to_parties, NUM_PARTIES);
 

@@ -25,6 +25,7 @@ typedef struct Party {
 int mod(int x, int y);
 void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out);
 void print_key(uint8_t *key, int length);
+void print_sk(uint8_t *key);
 int check_keys(uint8_t *ka, uint8_t *kb, uint8_t *zero);
 void two_ake(uint8_t *pka, uint8_t *pkb, uint8_t *ska, uint8_t *skb, uint8_t *ka, uint8_t *kb);
 void print_short_key(uint8_t *key, int length, int show);
@@ -40,3 +41,4 @@ int check_commitments(Party* parties, int i, int num_parties);
 int check_xs(Party* parties, int i, int num_parties);
 void compute_xs_commitments(Party* parties, int num_parties);
 void compute_left_right_keys(Party* parties, int num_parties);
+int check_all_keys(Party* parties, int num_parties);
