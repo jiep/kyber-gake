@@ -28,4 +28,13 @@ void two_ake(uint8_t *pka, uint8_t *pkb, uint8_t *ska, uint8_t *skb, uint8_t *ka
 void print_short_key(uint8_t *key, int length, int show);
 void init_to_zero(uint8_t *key, int length);
 void print_party(Party* parties, int i, int num_parties, int show);
+void print_parties(Party* parties, int num_parties, int show);
 void concat_masterkey(MasterKey* mk, int num_parties, uint8_t *concat_mk);
+void init_parties(Party* parties, int num_parties);
+void free_parties(Party* parties, int num_parties);
+void compute_sk_sid(Party* parties, int num_parties);
+void compute_masterkey(Party* parties, int num_parties);
+int check_commitments(Party* parties, int i, int num_parties);
+int check_xs(Party* parties, int i, int num_parties);
+void compute_xs_commitments(Party* parties, int num_parties);
+void compute_left_right_keys(Party* parties, int num_parties);

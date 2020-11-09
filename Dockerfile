@@ -10,7 +10,7 @@ COPY monitor-and-compile.sh .
 
 # RUN mkdir build && \
 #   cd build && \
-#   cmake -DBUILD_SHARED_LIBS=ON -GNinja .. && \
+#   cmake -GNinja .. && \
 #   ninja && ninja test
 
 CMD ["bash", "monitor-and-compile.sh"]
