@@ -8,7 +8,7 @@ set(AES_FILES aes256ctr.c)
 set(KECCAK_FILES fips202.c sha256.c sha512.c)
 set(AES_SRCS ${SRCS} symmetric-aes.c)
 set(GAKE3_FILES ${SRCS} kex.c randombytes.c test_gake3.c)
-set(GAKE_FILES ${SRCS} kex.c randombytes.c test_gake.c)
+set(GAKE_FILES ${SRCS} gake.c kex.c randombytes.c test_gake.c)
 
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
