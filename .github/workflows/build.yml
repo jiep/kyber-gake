@@ -46,7 +46,7 @@ jobs:
       run: |
         set -x
         assets=()
-        for asset in ./build/ref/test* report.txt; do
+        for asset in ./build/ref/test*; do
           assets+=("-a" "$asset")
         done
         hub release create "${assets[@]}" -m "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
