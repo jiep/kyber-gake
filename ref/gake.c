@@ -116,7 +116,7 @@ void print_party(Party* parties, int i, int num_parties, int show) {
   printf("\tCommitments:\n");
   for (int j = 0; j < num_parties; j++) {
     printf("\t\tc%d: ", j);
-    print_short_key(parties[i].commitments[j], KEX_SSBYTES, show);
+    print_short_key(parties[i].commitments[j], KYBER_INDCPA_BYTES, show);
   }
 
   printf("\tMaster Key: \n");

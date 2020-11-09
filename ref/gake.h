@@ -1,4 +1,4 @@
-typedef unsigned char Commitment[KYBER_INDCPA_PUBLICKEYBYTES];
+typedef unsigned char Commitment[KYBER_INDCPA_BYTES];
 typedef unsigned char MasterKey[KEX_SSBYTES];
 typedef unsigned char X[KEX_SSBYTES];
 typedef char * Pid[20];
@@ -17,7 +17,6 @@ typedef struct Party {
     MasterKey* masterkey;
     Pid* pids;
 } Party;
-
 
 #define getName(var)  #var
 

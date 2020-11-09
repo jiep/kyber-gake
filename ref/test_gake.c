@@ -80,7 +80,7 @@ int main(int argc, char** argv){
 
     xor_keys(pointer_to_parties[i].key_right, pointer_to_parties[i].key_left, xi);
     randombytes(ri, KYBER_SYMBYTES);
-    indcpa_enc(ci, pointer_to_parties[i].xs[i], pointer_to_parties[i].public_key, ri);
+    indcpa_enc(ci, xi, pointer_to_parties[i].public_key, ri);
 
     for (int j = 0; j < NUM_PARTIES; j++) {
       memcpy(pointer_to_parties[j].xs[i], &xi, KEX_SSBYTES);
@@ -96,7 +96,7 @@ int main(int argc, char** argv){
   // Round 4
   printf("Round 4\n");
   for (int i = 0; i < NUM_PARTIES; i++) {
-
+    printf("\tParty %d\n", i);
     // Check Xi
     X check;
     memcpy(check, pointer_to_parties[i].xs[0], KEX_SSBYTES);
@@ -106,51 +106,33 @@ int main(int argc, char** argv){
 
     int res = memcmp(check, zero, KEX_SSBYTES);
     if (res == 0) {
-      printf("Xi are zero!\n");
+      printf("\t\tXi are zero!\n");
     } else {
-      printf("Xi are not zero!\n");
+      printf("\t\tXi are not zero!\n");
       return 1;
     }
   }
 
-  // TODO: Fix check commitments
-  // for (int i = 0; i < NUM_PARTIES; i++) {
-  //
-  //   printf("Party %d\n", i);
-  //   for (int j = 0; i < NUM_PARTIES; j++) {
-  //     Commitment ci_check, ci_check2;
-  //
-  //     indcpa_enc(ci_check, pointer_to_parties[i].xs[j], pointer_to_parties[j].public_key, pointer_to_parties[i].coins[j]);
-  //     indcpa_enc(ci_check2, pointer_to_parties[i].xs[j], pointer_to_parties[j].public_key, pointer_to_parties[i].coins[j]);
-  //
-  //     printf("ci_check: ");
-  //     print_short_key(ci_check, KYBER_INDCPA_BYTES, SHOW);
-  //
-  //     printf("ci_check2: ");
-  //     print_short_key(ci_check, KYBER_INDCPA_BYTES, SHOW);
-  //
-  //     printf("x0: ");
-  //     print_short_key(pointer_to_parties[i].xs[j], KEX_SSBYTES, SHOW);
-  //
-  //     printf("pk: ");
-  //     print_short_key(pointer_to_parties[j].public_key, CRYPTO_PUBLICKEYBYTES, SHOW);
-  //
-  //     printf("coins: ");
-  //     print_short_key(pointer_to_parties[i].coins[j], KYBER_SYMBYTES, SHOW);
-  //
-  //     printf("commitment: ");
-  //     print_short_key(pointer_to_parties[i].commitments[j], KYBER_INDCPA_BYTES, SHOW);
-  //
-  //
-  //     int res_check = memcmp(ci_check, pointer_to_parties[i].commitments[j], KYBER_INDCPA_BYTES);
-  //     if (res_check == 0) {
-  //       printf("Commitments are right!\n");
-  //     } else {
-  //       printf("Commitments are wrong!\n");
-  //       return 1;
-  //     }
-  //   }
-  // }
+  for (int i = 0; i < NUM_PARTIES; i++) {
+
+    printf("\tParty %d\n", i);
+    for (int j = 0; j < NUM_PARTIES; j++) {
+      Commitment ci_check;
+
+      indcpa_enc(ci_check,
+                 pointer_to_parties[i].xs[j],
+                 pointer_to_parties[j].public_key,
+                 pointer_to_parties[i].coins[j]);
+
+      int res_check = memcmp(ci_check, pointer_to_parties[i].commitments[j], KYBER_INDCPA_BYTES);
+      if (res_check == 0) {
+        printf("\t\tCommitments are right!\n");
+      } else {
+        printf("\t\tCommitments are wrong!\n");
+        return 1;
+      }
+    }
+  }
 
   // Master Key
   for (int i = 0; i < NUM_PARTIES; i++) {
