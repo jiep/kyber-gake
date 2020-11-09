@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+      - gake
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Set up Git repository
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: sudo apt-get install cmake ninja-build openssl
+
+    - name: Compile and build binaries
+      run: bash ./build.sh
+
+    - name: Set version name
+      id: version
+      run: |
+        DATE=$(date +'%Y%m%d%H%M%S')
+        HASH=$(echo -e ${GITHUB_SHA} | cut -c1-8)
+        EVENT=${GITHUB_EVENT_NAME}
+        if [ "$EVENT" = "pull_request" ]; then
+            BRANCH=${GITHUB_HEAD_REF}
+        else
+            BRANCH=${GITHUB_REF##*/}
+        fi
+        if [ "$BRANCH" = "master" ]; then
+            VERSION="$DATE.$HASH"
+        else
+            VERSION="$DATE.$HASH.$BRANCH"
+        fi
+        echo "Version: $VERSION"
+        echo "::set-output name=version::$(echo v.$VERSION)"
+
+    - name: Create release
+      run: |
+        set -x
+        assets=()
+        for asset in ./build/ref/test* report.txt; do
+          assets+=("-a" "$asset")
+        done
+        hub release create "${assets[@]}" -m "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
