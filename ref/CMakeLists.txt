@@ -7,8 +7,9 @@ set(PQCKAT_SRCS PQCgenKAT_kem.c rng.c)
 set(AES_FILES aes256ctr.c)
 set(KECCAK_FILES fips202.c sha256.c sha512.c)
 set(AES_SRCS ${SRCS} symmetric-aes.c)
-set(GAKE3_FILES ${SRCS} gake.c kex.c randombytes.c test_gake3.c)
-set(GAKE_FILES ${SRCS} gake.c kex.c randombytes.c test_gake.c)
+set(GAKE3_FILES ${SRCS} gake.c kex.c randombytes.c utils.c test_gake3.c)
+set(GAKE_FILES ${SRCS} gake.c kex.c randombytes.c utils.c test_gake.c)
+set(GCM_FILES aes256gcm.c randombytes.c utils.c test_aes256gcm.c)
 
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -130,6 +131,10 @@ foreach(X RANGE 2 4)
    endif()
 
 endforeach()
+
+# Plain AES 256 GCM
+add_executable(test_aes256gcm ${GCM_FILES})
+target_link_libraries(test_aes256gcm PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
 
 # PQCKATs
 add_executable(PQCgenKAT_kem_ref ${PQCKAT_SRCS})

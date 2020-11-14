@@ -28,16 +28,10 @@ typedef struct Party {
     uint8_t term;
 } Party;
 
-#define getName(var)  #var
-
-int mod(int x, int y);
-void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out);
-void print_key(uint8_t *key, int length);
 void print_sk(uint8_t *key);
 int check_keys(uint8_t *ka, uint8_t *kb, uint8_t *zero);
+void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out);
 void two_ake(uint8_t *pka, uint8_t *pkb, uint8_t *ska, uint8_t *skb, uint8_t *ka, uint8_t *kb);
-void print_short_key(uint8_t *key, int length, int show);
-void init_to_zero(uint8_t *key, int length);
 void print_party(Party* parties, int i, int num_parties, int show);
 void print_parties(Party* parties, int num_parties, int show);
 void concat_masterkey(MasterKey* mk, int num_parties, uint8_t *concat_mk);

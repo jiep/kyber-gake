@@ -4,27 +4,7 @@
 #include <time.h>
 
 #include "gake.h"
-
-// https://cboard.cprogramming.com/c-programming/101643-mod-negatives.html
-int mod(int x, int y){
-   int t = x - ((x / y) * y);
-   if (t < 0) t += y;
-   return t;
-}
-
-void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out){
-
-  for (int j = 0; j < KEX_SSBYTES; j++) {
-    x_out[j] = x_a[j] ^ x_b[j];
-  }
-}
-
-void print_key(uint8_t *key, int length) {
-  for(int j = 0; j < length; j++){
-    printf("%02x", key[j]);
-  }
-  printf("\n");
-}
+#include "utils.h"
 
 void print_sk(uint8_t *key) {
   for(int j = 0; j < KEX_SSBYTES; j++){
@@ -33,7 +13,12 @@ void print_sk(uint8_t *key) {
   printf("\n");
 }
 
+void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out){
 
+  for (int j = 0; j < KEX_SSBYTES; j++) {
+    x_out[j] = x_a[j] ^ x_b[j];
+  }
+}
 
 int check_keys(uint8_t *ka, uint8_t *kb, uint8_t *zero) {
   if(memcmp(ka, kb, KEX_SSBYTES) != 0){
@@ -60,23 +45,6 @@ void two_ake(uint8_t *pka, uint8_t *pkb, uint8_t *ska, uint8_t *skb, uint8_t *ka
   kex_ake_initA(ake_senda, tk, eska, pkb); // Run by Alice
   kex_ake_sharedB(ake_sendb, kb, ake_senda, skb, pka); // Run by Bob
   kex_ake_sharedA(ka, ake_sendb, tk, eska, ska); // Run by Alice
-}
-
-void init_to_zero(uint8_t *key, int length){
-  for(int i = 0; i < length; i++){
-    key[i] = 0;
-  }
-}
-
-void print_short_key(uint8_t *key, int length, int show) {
-  for (int i = 0; i < show; i++) {
-    printf("%02x", key[i]);
-  }
-  printf("...");
-  for (int i = length - show; i < length; i++) {
-    printf("%02x", key[i]);
-  }
-  printf("\n");
 }
 
 void concat_masterkey(MasterKey* mk, int num_parties, uint8_t *concat_mk) {
