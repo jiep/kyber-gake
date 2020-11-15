@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "api.h"
 #include "aes256gcm.h"
+#include "randombytes.h"
 
 int main() {
 
@@ -15,6 +16,7 @@ int main() {
   unsigned char ciphertext_dem[2000];
   unsigned char tag[AES_256_GCM_TAG_LENGTH];
   unsigned char iv[AES_256_IVEC_LENGTH];
+  unsigned char coins[KYBER_SYMBYTES];
 
   printf("Key generation\n");
   pke_keypair(pk, sk);
@@ -25,13 +27,20 @@ int main() {
   printf("\tsk: ");
   print_short_key(sk, CRYPTO_SECRETKEYBYTES, SHOW);
 
-  printf("Encryption\n");
+  printf("\tcoins (zeros): ");
+  print_short_key(coins, CRYPTO_SECRETKEYBYTES, SHOW);
+
   unsigned char* m = (unsigned char *) "The quick brown fox jumps over the lazy dog";
 
   printf("\tplaintext: %s\n", m);
 
+  for (int i = 0; i < 5; i++) {
+    /* code */
+  }
+  printf("Encryption\n");
+
   int ciphertext_dem_len = pke_enc(m, pk, ciphertext_kem,
-                                   ciphertext_dem, tag, iv);
+                                   ciphertext_dem, tag, iv, coins);
 
   if (ciphertext_dem_len == -1) {
     printf("Error!\n");

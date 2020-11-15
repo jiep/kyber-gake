@@ -7,7 +7,8 @@ int pke_enc(unsigned char* m,
             unsigned char* ciphertext_kem,
             unsigned char* ciphertext_dem,
             unsigned char* tag,
-            unsigned char* iv);
+            unsigned char* iv,
+            unsigned char* coins);
 
 int pke_dec(unsigned char *sk,
             unsigned char* ciphertext_kem,

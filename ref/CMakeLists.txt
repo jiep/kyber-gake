@@ -10,7 +10,8 @@ set(AES_SRCS ${SRCS} symmetric-aes.c)
 set(GAKE3_FILES ${SRCS} gake.c kex.c randombytes.c utils.c test_gake3.c)
 set(GAKE_FILES ${SRCS} gake.c kex.c randombytes.c utils.c test_gake.c)
 set(GCM_FILES aes256gcm.c randombytes.c utils.c test_aes256gcm.c)
-set(CCA_FILES ${SRCS} indcca.c aes256gcm.c randombytes.c utils.c test_indcca.c)
+set(CCA_FILES ${SRCS} indcca.c kem_det.c aes256gcm.c randombytes.c utils.c test_indcca.c)
+set(KEM_DET_FILES ${SRCS} kem_det.c randombytes.c utils.c test_kem_det.c)
 
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -69,6 +70,10 @@ foreach(X RANGE 2 4)
 	 # Plain IND-CCA PKE
    add_executable(test_indcca${K${X}}_ref ${CCA_FILES})
    target_link_libraries(test_indcca${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+
+	 # Plain KEM DET
+	 add_executable(test_kem_det${K${X}}_ref ${KEM_DET_FILES})
+	 target_link_libraries(test_kem_det${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
 
 	 # Plain GAKE
    add_executable(test_gake${K${X}}_ref ${GAKE_FILES})
