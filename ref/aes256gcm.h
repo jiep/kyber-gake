@@ -1,4 +1,5 @@
 #include <openssl/evp.h>
+#include <openssl/err.h>
 
 #define AES_256_KEY_LENGTH        32
 #define AES_256_KEY_LENGTH_BITS   256

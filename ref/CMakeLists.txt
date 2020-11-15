@@ -10,6 +10,7 @@ set(AES_SRCS ${SRCS} symmetric-aes.c)
 set(GAKE3_FILES ${SRCS} gake.c kex.c randombytes.c utils.c test_gake3.c)
 set(GAKE_FILES ${SRCS} gake.c kex.c randombytes.c utils.c test_gake.c)
 set(GCM_FILES aes256gcm.c randombytes.c utils.c test_aes256gcm.c)
+set(CCA_FILES ${SRCS} indcca.c aes256gcm.c randombytes.c utils.c test_indcca.c)
 
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -65,11 +66,15 @@ foreach(X RANGE 2 4)
    target_link_libraries(test_kex${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
    #add_test(test_kex${K${{X}}_ref test_kex${K${X}}_ref)
 
+	 # Plain IND-CCA PKE
+   add_executable(test_indcca${K${X}}_ref ${CCA_FILES})
+   target_link_libraries(test_indcca${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+
 	 # Plain GAKE
    add_executable(test_gake${K${X}}_ref ${GAKE_FILES})
    target_link_libraries(test_gake${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
 
-	 # Plain GAKE
+	 # Plain GAKE 3
    add_executable(test_gake3-${K${X}}_ref ${GAKE3_FILES})
    target_link_libraries(test_gake3-${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
 
