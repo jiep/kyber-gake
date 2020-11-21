@@ -13,6 +13,7 @@ set(GCM_FILES aes256gcm.c randombytes.c utils.c test_aes256gcm.c)
 set(CCA_FILES ${SRCS} indcca.c kem_det.c aes256gcm.c randombytes.c utils.c test_indcca.c)
 set(KEM_DET_FILES ${SRCS} kem_det.c randombytes.c utils.c test_kem_det.c)
 set(COMMITMENT_FILES ${SRCS} kem_det.c indcca.c commitment.c aes256gcm.c randombytes.c utils.c test_commitment.c)
+set(KEX_QROM_SRCS utils.c indcpa.c kex_qrom.c randombytes.c test_kex_qrom.c)
 
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -66,6 +67,11 @@ foreach(X RANGE 2 4)
    # Plain KEX
    add_executable(test_kex${K${X}}_ref ${TESTKEX_SRCS})
    target_link_libraries(test_kex${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+   #add_test(test_kex${K${{X}}_ref test_kex${K${X}}_ref)
+
+	 # Plain KEX QROM
+   add_executable(test_kex_qrom${K${X}}_ref ${KEX_QROM_SRCS})
+   target_link_libraries(test_kex_qrom${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
    #add_test(test_kex${K${{X}}_ref test_kex${K${X}}_ref)
 
 	 # Plain IND-CCA PKE
