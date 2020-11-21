@@ -1,16 +1,86 @@
-#include "commitment.h"
-#include "kem_det.h"
+#include <string.h>
 
-int int commit(unsigned char* pk,
+#include "commitment.h"
+#include "indcca.h"
+#include "utils.h"
+#include "randombytes.h"
+#include "api.h"
+
+void print_commitment(Commitment* commitment) {
+
+  printf("ENC PKE \n");
+  printf("Ciphertext KEM: ");
+  print_short_key(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES, 10);
+
+  printf("Ciphertext DEM: ");
+  print_short_key(commitment->ciphertext_dem, 384, 10);
+
+  printf("Tag: ");
+  print_key(commitment->tag, AES_256_GCM_TAG_LENGTH);
+
+}
+
+int commit(unsigned char* pk,
            unsigned char* m,
            unsigned char* coins,
            Commitment* commitment) {
 
+   // Coins = iv + coins kem
+   unsigned char iv[AES_256_IVEC_LENGTH];
+   unsigned char coins_kem[KYBER_SYMBYTES];
+
+   // printf("coins (in): ");
+   // print_key(coins, COMMITMENTCOINSBYTES);
+   //
+   memcpy(iv, coins, AES_256_IVEC_LENGTH);
+   memcpy(coins_kem, coins + AES_256_IVEC_LENGTH, KYBER_SYMBYTES);
+   //
+   // printf("iv (in): ");
+   // print_key(iv, AES_256_IVEC_LENGTH);
+   //
+   // printf("coins_kem (in): ");
+   // print_key(coins_kem, KYBER_SYMBYTES);
+
    return pke_enc(m,
                   pk,
-                  commitment.ciphertext_kem,
-                  commitment.ciphertext_dem,
-                  commitment.tag,
-                  commitment.iv,
-                  coins);
+                  commitment->ciphertext_kem,
+                  commitment->ciphertext_dem,
+                  commitment->tag,
+                  iv,
+                  coins_kem);
+}
+
+int check_commitment(unsigned char* pk,
+                     unsigned char* m,
+                     unsigned char* coins,
+                     Commitment* commitment_check){
+
+  Commitment* commitment = (Commitment*) malloc(sizeof(Commitment));
+
+  commit(pk, m, coins, commitment);
+
+  // printf("Inside-----\n");
+  // print_commitment(commitment);
+  // print_commitment(commitment_check);
+
+  // printf("Public key (in): ");
+  // print_short_key(pk, CRYPTO_PUBLICKEYBYTES, 10);
+  //
+  // printf("Coins (in): ");
+  // print_short_key(coins, KYBER_SYMBYTES, 10);
+
+
+  int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_CIPHERTEXTBYTES);
+  int ret_ct_dem = memcmp(commitment->ciphertext_dem, commitment_check->ciphertext_dem, 384);
+  // int ret_iv     = memcmp(commitment->iv, commitment_check->iv, AES_256_IVEC_LENGTH);
+  int ret_tag    = memcmp(commitment->tag, commitment_check->tag, AES_256_GCM_TAG_LENGTH);
+
+  free(commitment);
+
+  if (ret_ct_kem != 0 || ret_ct_dem != 0 || ret_tag != 0) {
+    return 1;
+  }
+
+  return 0;
+
 }

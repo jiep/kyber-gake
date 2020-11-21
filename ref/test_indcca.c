@@ -21,72 +21,72 @@ int main() {
   printf("Key generation\n");
   pke_keypair(pk, sk);
 
-  printf("\tpk: ");
-  print_short_key(pk, CRYPTO_PUBLICKEYBYTES, SHOW);
+  // printf("\tsk: ");
+  // print_short_key(sk, CRYPTO_SECRETKEYBYTES, SHOW);
 
-  printf("\tsk: ");
-  print_short_key(sk, CRYPTO_SECRETKEYBYTES, SHOW);
+  randombytes(coins, KYBER_SYMBYTES);
 
-  printf("\tcoins (zeros): ");
-  print_short_key(coins, CRYPTO_SECRETKEYBYTES, SHOW);
+  randombytes(iv, AES_256_IVEC_LENGTH);
+  printf("iv to function: ");
+  print_key(iv, AES_256_IVEC_LENGTH);
 
   unsigned char* m = (unsigned char *) "The quick brown fox jumps over the lazy dog";
 
   printf("\tplaintext: %s\n", m);
 
   for (int i = 0; i < 5; i++) {
-    /* code */
+
+    printf("Encryption\n");
+
+    int ciphertext_dem_len = pke_enc(m, pk, ciphertext_kem,
+                                     ciphertext_dem, tag, iv, coins);
+
+    if (ciphertext_dem_len == -1) {
+      printf("Error!\n");
+      return 1;
+    }
+
+    // printf("\tpk: ");
+    // print_short_key(pk, CRYPTO_PUBLICKEYBYTES, SHOW);
+    // printf("\tciphertext KEM: ");
+    // print_short_key(ciphertext_kem, CRYPTO_CIPHERTEXTBYTES, SHOW);
+    // printf("\tciphertext DEM: ");
+    // print_key(ciphertext_dem, ciphertext_dem_len);
+    // printf("\ttag: ");
+    // print_key(tag, AES_256_GCM_TAG_LENGTH);
+    // printf("\tiv: ");
+    // print_key(iv, AES_256_IVEC_LENGTH);
+
+    // printf("Decryption\n");
+    //
+    // printf("\tsk: ");
+    // print_short_key(sk, CRYPTO_SECRETKEYBYTES, SHOW);
+    // printf("\tciphertext KEM: ");
+    // print_short_key(ciphertext_kem, CRYPTO_CIPHERTEXTBYTES, SHOW);
+    // printf("\tciphertext DEM: ");
+    // print_key(ciphertext_dem, ciphertext_dem_len);
+    // printf("\ttag: ");
+    // print_key(tag, AES_256_GCM_TAG_LENGTH);
+    // printf("\tiv: ");
+    // print_key(iv, AES_256_IVEC_LENGTH);
+
+    unsigned char m_dec[2000];
+
+    int ret = pke_dec(sk, ciphertext_kem,
+                ciphertext_dem,
+                ciphertext_dem_len,
+                tag,
+                iv,
+                m_dec);
+
+    if (ret == -1) {
+      printf("Error!\n");
+      return 1;
+    }
+
+    m_dec[ret] = '\0';
+    printf("Plaintext: %s\n", m_dec);
   }
-  printf("Encryption\n");
-
-  int ciphertext_dem_len = pke_enc(m, pk, ciphertext_kem,
-                                   ciphertext_dem, tag, iv, coins);
-
-  if (ciphertext_dem_len == -1) {
-    printf("Error!\n");
-    return 1;
-  }
-
-  printf("\tpk: ");
-  print_short_key(pk, CRYPTO_PUBLICKEYBYTES, SHOW);
-  printf("\tciphertext KEM: ");
-  print_short_key(ciphertext_kem, CRYPTO_CIPHERTEXTBYTES, SHOW);
-  printf("\tciphertext DEM: ");
-  print_key(ciphertext_dem, ciphertext_dem_len);
-  printf("\ttag: ");
-  print_key(tag, AES_256_GCM_TAG_LENGTH);
-  printf("\tiv: ");
-  print_key(iv, AES_256_IVEC_LENGTH);
-
-  printf("Decryption\n");
-
-  printf("\tsk: ");
-  print_short_key(sk, CRYPTO_SECRETKEYBYTES, SHOW);
-  printf("\tciphertext KEM: ");
-  print_short_key(ciphertext_kem, CRYPTO_CIPHERTEXTBYTES, SHOW);
-  printf("\tciphertext DEM: ");
-  print_key(ciphertext_dem, ciphertext_dem_len);
-  printf("\ttag: ");
-  print_key(tag, AES_256_GCM_TAG_LENGTH);
-  printf("\tiv: ");
-  print_key(iv, AES_256_IVEC_LENGTH);
-
-  unsigned char m_dec[2000];
-
-  int ret = pke_dec(sk, ciphertext_kem,
-              ciphertext_dem,
-              ciphertext_dem_len,
-              tag,
-              iv,
-              m_dec);
-
-  if (ret == -1) {
-    printf("Error!\n");
-    return 1;
-  }
-
-  m_dec[ret] = '\0';
-  printf("Plaintext: %s\n", m_dec);
 
   return 0;
 }
