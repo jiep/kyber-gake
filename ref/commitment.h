@@ -1,8 +1,9 @@
 #include "kem_det.h"
 #include "aes256gcm.h"
+#include "kex.h"
 
 #ifndef COMMITMENTCOINSBYTES
-#define COMMITMENTCOINSBYTES (AES_256_IVEC_LENGTH + KYBER_SYMBYTES)
+#define COMMITMENTCOINSBYTES (AES_256_IVEC_LENGTH + KEX_SSBYTES)
 #endif
 
 typedef struct Commitment {

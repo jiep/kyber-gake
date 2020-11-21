@@ -83,13 +83,13 @@ void print_party(Party* parties, int i, int num_parties, int show) {
   printf("\tCoins: \n");
   for (int j = 0; j < num_parties; j++) {
     printf("\t\tr%d: ", j);
-    print_short_key(parties[i].coins[j], KEX_SSBYTES, show);
+    print_short_key(parties[i].coins[j], COMMITMENTCOINSBYTES, show);
   }
 
   printf("\tCommitments:\n");
   for (int j = 0; j < num_parties; j++) {
     printf("\t\tc%d: ", j);
-    print_short_key(parties[i].commitments[j], KYBER_INDCPA_BYTES, show);
+    print_commitment(&parties[i].commitments[j]);
   }
 
   printf("\tMaster Key: \n");
@@ -192,14 +192,11 @@ void compute_masterkey(Party* parties, int num_parties) {
 
 int check_commitments(Party* parties, int i, int num_parties) {
   for (int j = 0; j < num_parties; j++) {
-    Commitment ci_check;
+    int res_check = check_commitment(parties[j].public_key,
+                     parties[i].xs[j],
+                     parties[i].coins[j],
+                     &parties[i].commitments[j]);
 
-    indcpa_enc(ci_check,
-               parties[i].xs[j],
-               parties[j].public_key,
-               parties[i].coins[j]);
-
-    int res_check = memcmp(ci_check, parties[i].commitments[j], KYBER_INDCPA_BYTES);
     if (res_check != 0) {
       return 1;
     }
@@ -234,13 +231,17 @@ void compute_xs_commitments(Party* parties, int num_parties) {
     Commitment ci;
 
     xor_keys(parties[i].key_right, parties[i].key_left, xi);
-    randombytes(ri, KYBER_SYMBYTES);
-    indcpa_enc(ci, xi, parties[i].public_key, ri);
+    randombytes(ri, COMMITMENTCOINSBYTES);
+    commit(parties[i].public_key, xi, ri, &ci);
+
+    printf("Coins (out): ");
+    print_key(ri, COMMITMENTCOINSBYTES);
 
     for (int j = 0; j < num_parties; j++) {
       memcpy(parties[j].xs[i], &xi, KEX_SSBYTES);
-      memcpy(parties[j].coins[i], &ri, KYBER_SYMBYTES);
-      memcpy(parties[j].commitments[i], &ci, KYBER_INDCPA_BYTES);
+      memcpy(parties[j].coins[i], &ri, COMMITMENTCOINSBYTES);
+      // memcpy(parties[j].commitments[i], &ci, KYBER_INDCPA_BYTES);
+      parties[j].commitments[i] = ci;
     }
   }
 }

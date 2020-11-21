@@ -27,19 +27,19 @@ int commit(unsigned char* pk,
 
    // Coins = iv + coins kem
    unsigned char iv[AES_256_IVEC_LENGTH];
-   unsigned char coins_kem[KYBER_SYMBYTES];
+   unsigned char coins_kem[KEX_SSBYTES];
 
    // printf("coins (in): ");
    // print_key(coins, COMMITMENTCOINSBYTES);
    //
    memcpy(iv, coins, AES_256_IVEC_LENGTH);
-   memcpy(coins_kem, coins + AES_256_IVEC_LENGTH, KYBER_SYMBYTES);
+   memcpy(coins_kem, coins + AES_256_IVEC_LENGTH, KEX_SSBYTES);
    //
    // printf("iv (in): ");
    // print_key(iv, AES_256_IVEC_LENGTH);
    //
    // printf("coins_kem (in): ");
-   // print_key(coins_kem, KYBER_SYMBYTES);
+   // print_key(coins_kem, KEX_SSBYTES);
 
    return pke_enc(m,
                   pk,
@@ -59,6 +59,10 @@ int check_commitment(unsigned char* pk,
 
   commit(pk, m, coins, commitment);
 
+  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  print_commitment(commitment_check);
+  print_commitment(commitment);
+
   // printf("Inside-----\n");
   // print_commitment(commitment);
   // print_commitment(commitment_check);
@@ -66,8 +70,10 @@ int check_commitment(unsigned char* pk,
   // printf("Public key (in): ");
   // print_short_key(pk, CRYPTO_PUBLICKEYBYTES, 10);
   //
-  // printf("Coins (in): ");
-  // print_short_key(coins, KYBER_SYMBYTES, 10);
+  printf("Coins (check): ");
+  print_key(coins, COMMITMENTCOINSBYTES);
+  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+
 
 
   int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_CIPHERTEXTBYTES);

@@ -5,12 +5,12 @@
 #include "randombytes.h"
 #include "api.h"
 #include "symmetric.h"
+#include "commitment.h"
 
-typedef unsigned char Commitment[KYBER_INDCPA_BYTES];
 typedef unsigned char MasterKey[KEX_SSBYTES];
 typedef unsigned char X[KEX_SSBYTES];
 typedef char * Pid[20];
-typedef unsigned char Coins[KYBER_SYMBYTES];
+typedef unsigned char Coins[COMMITMENTCOINSBYTES];
 
 typedef struct Party {
     unsigned char public_key[CRYPTO_PUBLICKEYBYTES];
