@@ -7,17 +7,9 @@
 // #include "api.h"
 
 void print_commitment(CommitmentQROM* commitment) {
-
-  printf("ENC PKE \n");
-  printf("Ciphertext KEM: ");
-  print_short_key(commitment->ciphertext_kem, KYBER_INDCPA_BYTES, 10);
-
-  printf("Ciphertext DEM: ");
-  print_short_key(commitment->ciphertext_dem, 384, 10);
-
-  printf("Tag: ");
+  print_short_key_sep(commitment->ciphertext_kem, KYBER_INDCPA_BYTES, 10, "|");
+  print_short_key_sep(commitment->ciphertext_dem, 384, 10, "|");
   print_key(commitment->tag, AES_256_GCM_TAG_LENGTH);
-
 }
 
 int commit(unsigned char* pk,
@@ -60,9 +52,9 @@ int check_commitment(unsigned char* pk,
 
   commit(pk, m, coins, commitment);
 
-  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-  print_commitment(commitment_check);
-  print_commitment(commitment);
+  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  // print_commitment(commitment_check);
+  // print_commitment(commitment);
 
   // printf("Inside-----\n");
   // print_commitment(commitment);
@@ -73,7 +65,7 @@ int check_commitment(unsigned char* pk,
   //
   // printf("Coins (check): ");
   // print_key(coins, COMMITMENTQROMCOINSBYTES);
-  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
 
 

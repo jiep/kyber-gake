@@ -7,17 +7,9 @@
 #include "api.h"
 
 void print_commitment(Commitment* commitment) {
-
-  printf("ENC PKE \n");
-  printf("Ciphertext KEM: ");
-  print_short_key(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES, 10);
-
-  printf("Ciphertext DEM: ");
-  print_short_key(commitment->ciphertext_dem, 384, 10);
-
-  printf("Tag: ");
-  print_key(commitment->tag, AES_256_GCM_TAG_LENGTH);
-
+  print_short_key_sep(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES, 10, "|");
+  print_short_key_sep(commitment->ciphertext_dem, 384, 10, "|");
+  print_short_key(commitment->tag, AES_256_GCM_TAG_LENGTH, 10);
 }
 
 int commit(unsigned char* pk,
@@ -59,9 +51,9 @@ int check_commitment(unsigned char* pk,
 
   commit(pk, m, coins, commitment);
 
-  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-  print_commitment(commitment_check);
-  print_commitment(commitment);
+  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  // print_commitment(commitment_check);
+  // print_commitment(commitment);
 
   // printf("Inside-----\n");
   // print_commitment(commitment);
@@ -70,9 +62,9 @@ int check_commitment(unsigned char* pk,
   // printf("Public key (in): ");
   // print_short_key(pk, CRYPTO_PUBLICKEYBYTES, 10);
   //
-  printf("Coins (check): ");
-  print_key(coins, COMMITMENTCOINSBYTES);
-  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  // printf("Coins (check): ");
+  // print_key(coins, COMMITMENTCOINSBYTES);
+  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
   int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_CIPHERTEXTBYTES);
   int ret_ct_dem = memcmp(commitment->ciphertext_dem, commitment_check->ciphertext_dem, 384);

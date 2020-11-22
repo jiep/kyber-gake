@@ -33,6 +33,17 @@ void print_short_key(uint8_t *key, int length, int show) {
   printf("\n");
 }
 
+void print_short_key_sep(uint8_t *key, int length, int show, char* sep) {
+  for (int i = 0; i < show; i++) {
+    printf("%02x", key[i]);
+  }
+  printf("...");
+  for (int i = length - show; i < length; i++) {
+    printf("%02x", key[i]);
+  }
+  printf(sep);
+}
+
 void itoa(int n, char s[]) {
      int i, sign;
 
