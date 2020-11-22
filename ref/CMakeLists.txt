@@ -11,6 +11,7 @@ set(GAKE3_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c
 set(GAKE_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake.c)
 set(GCM_FILES aes256gcm.c randombytes.c utils.c test_aes256gcm.c)
 set(CCA_FILES ${SRCS} indcca.c kem_det.c aes256gcm.c randombytes.c utils.c test_indcca.c)
+set(COMMITMENT_QROM_FILES ${SRCS} commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c randombytes.c utils.c test_commitment_qrom.c)
 set(KEM_DET_FILES ${SRCS} kem_det.c randombytes.c utils.c test_kem_det.c)
 set(COMMITMENT_FILES ${SRCS} kem_det.c indcca.c commitment.c aes256gcm.c randombytes.c utils.c test_commitment.c)
 set(KEX_QROM_SRCS utils.c indcpa.c kex_qrom.c randombytes.c test_kex_qrom.c)
@@ -82,6 +83,10 @@ foreach(X RANGE 2 4)
 	 # Plain IND-CCA PKE
    add_executable(test_indcca${K${X}}_ref ${CCA_FILES})
    target_link_libraries(test_indcca${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+
+	 # Plain COMMITMENT QROM
+   add_executable(test_commitment_qrom${K${X}}_ref ${COMMITMENT_QROM_FILES})
+   target_link_libraries(test_commitment_qrom${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
 
 	 # Plain KEM DET
 	 add_executable(test_kem_det${K${X}}_ref ${KEM_DET_FILES})

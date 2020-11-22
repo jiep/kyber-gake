@@ -1,16 +1,16 @@
 #include <string.h>
 
-#include "commitment.h"
-#include "indcca.h"
+#include "commitment_qrom.h"
+#include "indcca_qrom.h"
 #include "utils.h"
 #include "randombytes.h"
-#include "api.h"
+// #include "api.h"
 
-void print_commitment(Commitment* commitment) {
+void print_commitment(CommitmentQROM* commitment) {
 
   printf("ENC PKE \n");
   printf("Ciphertext KEM: ");
-  print_short_key(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES, 10);
+  print_short_key(commitment->ciphertext_kem, KYBER_INDCPA_BYTES, 10);
 
   printf("Ciphertext DEM: ");
   print_short_key(commitment->ciphertext_dem, 384, 10);
@@ -23,17 +23,17 @@ void print_commitment(Commitment* commitment) {
 int commit(unsigned char* pk,
            unsigned char* m,
            unsigned char* coins,
-           Commitment* commitment) {
+           CommitmentQROM* commitment) {
 
    // Coins = iv + coins kem
    unsigned char iv[AES_256_IVEC_LENGTH];
-   unsigned char coins_kem[KEX_SSBYTES];
+   unsigned char coins_kem[KYBER_INDCPA_MSGBYTES];
 
    // printf("coins (in): ");
    // print_key(coins, COMMITMENTCOINSBYTES);
    //
    memcpy(iv, coins, AES_256_IVEC_LENGTH);
-   memcpy(coins_kem, coins + AES_256_IVEC_LENGTH, KEX_SSBYTES);
+   memcpy(coins_kem, coins + AES_256_IVEC_LENGTH, KYBER_INDCPA_MSGBYTES);
    //
    // printf("iv (in): ");
    // print_key(iv, AES_256_IVEC_LENGTH);
@@ -41,21 +41,22 @@ int commit(unsigned char* pk,
    // printf("coins_kem (in): ");
    // print_key(coins_kem, KEX_SSBYTES);
 
-   return pke_enc(m,
-                  pk,
-                  commitment->ciphertext_kem,
-                  commitment->ciphertext_dem,
-                  commitment->tag,
-                  iv,
-                  coins_kem);
+   return pke_qrom_enc(m,
+                       pk,
+                       commitment->ciphertext_kem,
+                       commitment->ciphertext_dem,
+                       commitment->tag,
+                       iv,
+                       coins_kem);
+
 }
 
 int check_commitment(unsigned char* pk,
                      unsigned char* m,
                      unsigned char* coins,
-                     Commitment* commitment_check){
+                     CommitmentQROM* commitment_check){
 
-  Commitment* commitment = (Commitment*) malloc(sizeof(Commitment));
+  CommitmentQROM* commitment = (CommitmentQROM*) malloc(sizeof(CommitmentQROM));
 
   commit(pk, m, coins, commitment);
 
@@ -70,11 +71,13 @@ int check_commitment(unsigned char* pk,
   // printf("Public key (in): ");
   // print_short_key(pk, CRYPTO_PUBLICKEYBYTES, 10);
   //
-  printf("Coins (check): ");
-  print_key(coins, COMMITMENTCOINSBYTES);
+  // printf("Coins (check): ");
+  // print_key(coins, COMMITMENTQROMCOINSBYTES);
   printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
-  int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_CIPHERTEXTBYTES);
+
+
+  int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_INDCPA_BYTES);
   int ret_ct_dem = memcmp(commitment->ciphertext_dem, commitment_check->ciphertext_dem, 384);
   // int ret_iv     = memcmp(commitment->iv, commitment_check->iv, AES_256_IVEC_LENGTH);
   int ret_tag    = memcmp(commitment->tag, commitment_check->tag, AES_256_GCM_TAG_LENGTH);
