@@ -4,19 +4,16 @@ import subprocess
 import pandas as pd
 import seaborn as sns
 import numpy as np
+import yaml
+import sys
+import signal
+from pathlib import Path
 from matplotlib import pyplot as plt
 
 SECURITY = [512, 768, 1024]
 TYPE = ["QROM", "ROM"]
-NUM_PARTIES = [2, 10, 50, 100]
-TRIALS = 10
-FOLDER = "build/ref"
-BINARY = "test_gake"
-OUTPUT_FOLDER = "results"
 
-data = pd.read_csv("{}/results.csv".format(OUTPUT_FOLDER))
-
-def plot_total_time_by_time(data):
+def plot_total_time_by_time(data, config):
 
     fig, axes = plt.subplots(1,3, figsize=(16,8))
     fig.suptitle('Total time')
@@ -26,15 +23,18 @@ def plot_total_time_by_time(data):
         df = df[['parties', 'type', 'time_total']]
         df = df.groupby(['type', 'parties']).agg({'time_total': np.mean})
 
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print(df)
+        # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        #     print(df)
 
         sns.lineplot(ax=axes[i], x="parties", y="time_total", hue="type", data=df)
         axes[i].set(xlabel='Number of parties', ylabel='Total time (seconds)')
         axes[i].set_title('Security level: {}'.format(sec))
-    fig.savefig("{}/totaltime.png".format(OUTPUT_FOLDER))
+        
+    figname = "{}/totaltime.png".format(config["OUTPUT_FOLDER"])
+    fig.savefig(figname)
+    print("Saved file to {}".format(figname))
 
-def plot_total_time_by_round(data):
+def plot_total_time_by_round(data, config):
 
     fig, axes = plt.subplots(1,3, figsize=(16,8))
     fig.suptitle('Total time')
@@ -44,8 +44,8 @@ def plot_total_time_by_round(data):
         df = df[['type', 'time_init', 'time_round12', 'time_round3', 'time_round4']]
         df = df.groupby(['type']).agg({'time_init': np.mean, 'time_round12': np.mean, 'time_round3': np.mean, 'time_round4': np.mean}).unstack()
 
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print(df)
+        # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        #     print(df)
 
         ind = len(TYPE)
         axes[i].set_title('Security level: {}'.format(sec))
@@ -55,8 +55,32 @@ def plot_total_time_by_round(data):
         p1 = axes[i].bar(ind, df['time_init'])
         plt.legend((p1[0], p2[0], p3[0], p4[0]), ('Init time', 'Round 1-2 time', 'Round 3 time', 'Round 4 time'))
 
+    figname = "{}/totaltime_bar.png".format(config["OUTPUT_FOLDER"])
+    fig.savefig(figname)
+    print("Saved file to {}".format(figname))
 
-    fig.savefig("{}/totaltime_bar.png".format(OUTPUT_FOLDER))
+def main():
+    if(len(sys.argv) != 2):
+        print("You must provide a config file (e.g. config.yaml)")
+        sys.exit(1)
 
-plot_total_time_by_time(data)
-plot_total_time_by_round(data)
+    file = sys.argv[1]
+    if not Path(file).is_file():
+        print("File {} does NOT exist".format(file))
+        sys.exit(1)
+
+    with open(file) as f:
+        config = yaml.load(f, Loader=yaml.SafeLoader)
+
+    results_file = "{}/results.csv".format(config["OUTPUT_FOLDER"])
+    if not Path(results_file).is_file():
+        print("File {} does NOT exist".format(file))
+        sys.exit(1)
+
+    data = pd.read_csv(results_file)
+
+    plot_total_time_by_time(data, config)
+    plot_total_time_by_round(data, config)
+
+if __name__ == '__main__':
+    main()
