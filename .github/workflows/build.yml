@@ -27,7 +27,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: binaries
-        path: ./build/{ref, avx2}/test_gake*
+        path: ./build/ref/test_gake*
         retention-days: 7
 
   tests:
@@ -47,6 +47,7 @@ jobs:
     - name: Run tests
       run: |
         mkdir -p build results
+        ls -R binaries
         mv binaries build
         virtualenv --python=python3 venv
         source venv/bin/activate
