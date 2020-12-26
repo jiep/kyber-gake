@@ -26,7 +26,7 @@ jobs:
     - name: Archive binaries
       uses: actions/upload-artifact@v2
       with:
-        name: GAKE binaries
+        name: binaries
         path: ./build/{ref, avx2}/test_gake*
         retention-days: 7
 
@@ -47,7 +47,7 @@ jobs:
     - name: Run tests
       run: |
         mkdir -p build results
-        mv -rp "GAKE binaries" build
+        mv -rp binaries build
         virtualenv --python=python3 venv
         source venv/bin/activate
         pip install -r graphs/requirements.txt
@@ -89,7 +89,7 @@ jobs:
 
     - name: Upload artifacts
       run: |
-        mv "GAKE binaries" GAKE
+        mv binaries GAKE
         zip -r GAKE.zip GAKE
         zip -r results.zip results
         set -x
