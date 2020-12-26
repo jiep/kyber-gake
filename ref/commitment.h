@@ -16,6 +16,7 @@ void print_commitment(Commitment* commitment);
 
 int commit(unsigned char* pk,
            unsigned char* m,
+           int len_m,
            unsigned char* coins,
            Commitment* commitment);
 

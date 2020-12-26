@@ -11,6 +11,7 @@ void print_data(unsigned char* m,
 int pke_keypair(unsigned char* pk, unsigned char* sk);
 
 int pke_enc(unsigned char* m,
+            int len_m,
             unsigned char* pk,
             unsigned char* ciphertext_kem,
             unsigned char* ciphertext_dem,
@@ -18,7 +19,7 @@ int pke_enc(unsigned char* m,
             unsigned char* iv,
             unsigned char* coins);
 
-int pke_dec(unsigned char *sk,
+int pke_dec(unsigned char* sk,
             unsigned char* ciphertext_kem,
             unsigned char* ciphertext_dem,
             int ciphertext_dem_len,

@@ -242,7 +242,7 @@ void compute_xs_commitments(Party* parties, int num_parties) {
 
     xor_keys(parties[i].key_right, parties[i].key_left, xi);
     randombytes(ri, COMMITMENTCOINSBYTES);
-    commit(parties[i].public_key, xi, ri, &ci);
+    commit(parties[i].public_key, xi, 384, ri, &ci);
 
     // printf("Coins (out): ");
     // print_key(ri, COMMITMENTCOINSBYTES);

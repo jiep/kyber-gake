@@ -41,6 +41,7 @@ int pke_keypair(unsigned char* pk, unsigned char* sk) {
 }
 
 int pke_enc(unsigned char* m,
+            int len_m,
             unsigned char* pk,
             unsigned char* ciphertext_kem,
             unsigned char* ciphertext_dem,
@@ -57,7 +58,7 @@ int pke_enc(unsigned char* m,
   // printf("K: ");
   // print_key(K, AES_256_KEY_LENGTH);
 
-  int ret = gcm_encrypt(m, sizeof(m),
+  int ret = gcm_encrypt(m, len_m,
                         aad, strlen((char*) aad),
                         K,
                         iv, AES_256_IVEC_LENGTH,

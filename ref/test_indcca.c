@@ -37,8 +37,8 @@ int main() {
   for (int i = 0; i < 5; i++) {
 
     printf("Encryption\n");
-
-    int ciphertext_dem_len = pke_enc(m, pk, ciphertext_kem,
+    size_t len_m = strlen((char*) m);
+    int ciphertext_dem_len = pke_enc(m, len_m,  pk, ciphertext_kem,
                                      ciphertext_dem, tag, iv, coins);
 
     if (ciphertext_dem_len == -1) {
