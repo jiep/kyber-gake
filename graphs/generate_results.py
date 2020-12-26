@@ -57,11 +57,9 @@ def main():
 
                     print("({}) {}".format(trial, bin), flush=True)
 
-                    output = subprocess.Popen(bin, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8") 
-                    print(output)
+                    output = subprocess.Popen(bin, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
 
                     results_file.write("{},{},{},{}\n".format(security, parties, type, ",".join(parse(output))))
-                    print(parse(output))
 
     results_file.close()
 
