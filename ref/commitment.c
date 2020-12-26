@@ -7,15 +7,15 @@
 #include "api.h"
 
 void print_commitment(Commitment* commitment) {
-  // print_short_key_sep(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES, 10, "|");
-  // print_short_key_sep(commitment->ciphertext_dem, 384, 10, "|");
-  // print_short_key(commitment->tag, AES_256_GCM_TAG_LENGTH, 10);
+  print_short_key_sep(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES, 10, "|");
+  print_short_key_sep(commitment->ciphertext_dem, 384, 10, "|");
+  print_short_key(commitment->tag, AES_256_GCM_TAG_LENGTH, 10);
 
-  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-  print_key(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES);
-  print_key(commitment->ciphertext_dem, 384);
-  print_key(commitment->tag, AES_256_GCM_TAG_LENGTH);
-  printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  // print_key(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES);
+  // print_key(commitment->ciphertext_dem, 384);
+  // print_key(commitment->tag, AES_256_GCM_TAG_LENGTH);
+  // printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 
 }
 
@@ -66,21 +66,6 @@ int check_commitment(unsigned char* pk,
   printf("Inside check_commitment function: \n");
   print_commitment(commitment);
   print_commitment(commitment_check);
-
-  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-  // print_commitment(commitment_check);
-  // print_commitment(commitment);
-
-  // printf("Inside-----\n");
-  // print_commitment(commitment);
-  // print_commitment(commitment_check);
-
-  // printf("Public key (in): ");
-  // print_short_key(pk, CRYPTO_PUBLICKEYBYTES, 10);
-  //
-  // printf("Coins (check): ");
-  // print_key(coins, COMMITMENTCOINSBYTES);
-  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
   int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_CIPHERTEXTBYTES);
   int ret_ct_dem = memcmp(commitment->ciphertext_dem, commitment_check->ciphertext_dem, 384);
