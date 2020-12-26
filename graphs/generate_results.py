@@ -30,12 +30,12 @@ def main():
     TYPE = ["QROM", "ROM"]
 
     if(len(sys.argv) != 2):
-        print("You must provide a config file (e.g. config.yaml)")
+        print("You must provide a config file (e.g. config.yaml)", flush=True)
         sys.exit(1)
 
     file = sys.argv[1]
     if not Path(file).is_file():
-        print("File {} does NOT exist".format(file))
+        print("File {} does NOT exist".format(file), flush=True)
         sys.exit(1)
 
     with open(file) as f:
@@ -54,7 +54,7 @@ def main():
                     else:
                         bin = "{}/{}{}_ref {}".format(config["FOLDER"], config["BINARY"], security, parties)
 
-                    print("({}) {}".format(trial, bin))
+                    print("({}) {}".format(trial, bin), flush=True)
 
                     output = str(subprocess.Popen(bin, shell=True, stdout=subprocess.PIPE).stdout.read())
 

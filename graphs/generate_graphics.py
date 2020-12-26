@@ -29,10 +29,10 @@ def plot_total_time_by_time(data, config):
         sns.lineplot(ax=axes[i], x="parties", y="time_total", hue="type", data=df)
         axes[i].set(xlabel='Number of parties', ylabel='Total time (seconds)')
         axes[i].set_title('Security level: {}'.format(sec))
-        
+
     figname = "{}/totaltime.png".format(config["OUTPUT_FOLDER"])
     fig.savefig(figname)
-    print("Saved file to {}".format(figname))
+    print("Saved file to {}".format(figname), flush=True)
 
 def plot_total_time_by_round(data, config):
 
@@ -57,16 +57,16 @@ def plot_total_time_by_round(data, config):
 
     figname = "{}/totaltime_bar.png".format(config["OUTPUT_FOLDER"])
     fig.savefig(figname)
-    print("Saved file to {}".format(figname))
+    print("Saved file to {}".format(figname), flush=True)
 
 def main():
     if(len(sys.argv) != 2):
-        print("You must provide a config file (e.g. config.yaml)")
+        print("You must provide a config file (e.g. config.yaml)", flush=True)
         sys.exit(1)
 
     file = sys.argv[1]
     if not Path(file).is_file():
-        print("File {} does NOT exist".format(file))
+        print("File {} does NOT exist".format(file), flush=True)
         sys.exit(1)
 
     with open(file) as f:
@@ -74,7 +74,7 @@ def main():
 
     results_file = "{}/results.csv".format(config["OUTPUT_FOLDER"])
     if not Path(results_file).is_file():
-        print("File {} does NOT exist".format(file))
+        print("File {} does NOT exist".format(file), flush=True)
         sys.exit(1)
 
     data = pd.read_csv(results_file)
