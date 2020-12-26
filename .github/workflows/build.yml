@@ -52,12 +52,11 @@ jobs:
         source venv/bin/activate
         pip install -r graphs/requirements.txt
         python graphs/generate_results.py graphs/config.yaml
-        ls -R results
 
     - name: Archive results
       uses: actions/upload-artifact@v2
       with:
-        name: Results
+        name: results
         path: ./results/*
         retention-days: 7
 
