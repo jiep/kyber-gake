@@ -52,3 +52,10 @@ jobs:
         hub release create "${assets[@]}" -m "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: GAKE binaries
+        path: ./build/ref/test_gake*
+        retention-days: 7
