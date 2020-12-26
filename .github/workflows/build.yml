@@ -47,7 +47,7 @@ jobs:
     - name: Run tests
       run: |
         mkdir -p build results
-        mv -rp binaries build
+        mv binaries build
         virtualenv --python=python3 venv
         source venv/bin/activate
         pip install -r graphs/requirements.txt
