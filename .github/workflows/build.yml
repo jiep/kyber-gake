@@ -53,7 +53,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Archive production artifacts
+    - name: Archive binaries
       uses: actions/upload-artifact@v2
       with:
         name: GAKE binaries
@@ -81,9 +81,9 @@ jobs:
         virtualenv --python=python3 venv
         source venv/bin/activate
         pip install -r graphs/requirements.txt
-        python graphs/generate_graphics.py graphs/config.yml
+        python graphs/generate_graphics.py graphs/config.yaml
 
-    - name: Archive production artifacts
+    - name: Archive results
       uses: actions/upload-artifact@v2
       with:
         name: Results
