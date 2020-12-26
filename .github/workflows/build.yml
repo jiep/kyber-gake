@@ -23,41 +23,11 @@ jobs:
     - name: Compile and build binaries
       run: bash ./build.sh
 
-    - name: Set version name
-      id: version
-      run: |
-        DATE=$(date +'%Y%m%d%H%M%S')
-        HASH=$(echo -e ${GITHUB_SHA} | cut -c1-8)
-        EVENT=${GITHUB_EVENT_NAME}
-        if [ "$EVENT" = "pull_request" ]; then
-            BRANCH=${GITHUB_HEAD_REF}
-        else
-            BRANCH=${GITHUB_REF##*/}
-        fi
-        if [ "$BRANCH" = "master" ]; then
-            VERSION="$DATE.$HASH"
-        else
-            VERSION="$DATE.$HASH.$BRANCH"
-        fi
-        echo "Version: $VERSION"
-        echo "::set-output name=version::$(echo v.$VERSION)"
-
-    - name: Create release
-      run: |
-        set -x
-        assets=()
-        for asset in ./build/ref/test_gake*; do
-          assets+=("-a" "$asset")
-        done
-        hub release create "${assets[@]}" -m "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Archive binaries
       uses: actions/upload-artifact@v2
       with:
         name: GAKE binaries
-        path: ./build/ref/test_gake*
+        path: ./build/{ref, avx2}/test_gake*
         retention-days: 7
 
   tests:
@@ -81,7 +51,7 @@ jobs:
         virtualenv --python=python3 venv
         source venv/bin/activate
         pip install -r graphs/requirements.txt
-        python graphs/generate_graphics.py graphs/config.yaml
+        python graphs/generate_results.py graphs/config.yaml
 
     - name: Archive results
       uses: actions/upload-artifact@v2
@@ -89,3 +59,40 @@ jobs:
         name: Results
         path: ./results/*
         retention-days: 7
+
+  release:
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v2
+
+    - name: Set release name
+      id: version
+      run: |
+        DATE=$(date +'%Y%m%d%H%M%S')
+        HASH=$(echo -e ${GITHUB_SHA} | cut -c1-8)
+        EVENT=${GITHUB_EVENT_NAME}
+        if [ "$EVENT" = "pull_request" ]; then
+            BRANCH=${GITHUB_HEAD_REF}
+        else
+            BRANCH=${GITHUB_REF##*/}
+        fi
+        if [ "$BRANCH" = "master" ]; then
+            VERSION="$DATE.$HASH"
+        else
+            VERSION="$DATE.$HASH.$BRANCH"
+        fi
+        echo "Version: $VERSION"
+        echo "::set-output name=version::$(echo v.$VERSION)"
+
+    - name: Upload artifacts
+      run: |
+        mv "GAKE binaries" GAKE
+        zip -r GAKE.zip GAKE
+        zip -r results.zip results
+        set -x
+        assets=()
+        for asset in "GAKE.zip" results.zip; do
+          assets+=("-a" "$asset")
+        done
+        hub release create "${assets[@]}" -m "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
