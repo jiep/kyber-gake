@@ -68,9 +68,24 @@ jobs:
     - name: Set up Git repository
       uses: actions/checkout@v2
 
+    - name: Download dependencies
+      run: sudo apt-get install python3 virtualenv
+
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v2
 
-    - name: View artifacts
+    - name: Run tests
       run: |
-        ls -lah .
+        mkdir -p build results
+        mv "GAKE binaries" build
+        virtualenv --python=python3 venv
+        source venv/bin/activate
+        pip install -r graphs/requirements.txt
+        python graphs/generate_graphics.py graphs/config.yml
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Results
+        path: ./results/*
+        retention-days: 7
