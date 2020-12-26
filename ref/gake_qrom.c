@@ -123,6 +123,15 @@ void init_parties(Party* parties, int num_parties) {
     init_to_zero(parties[i].sid, KEX_SSBYTES);
     init_to_zero(parties[i].sk, KEX_SSBYTES);
 
+    for (int j = 0; j < num_parties; j++) {
+      init_to_zero(parties[i].commitments[j].ciphertext_kem, KYBER_INDCPA_MSGBYTES);
+      init_to_zero(parties[i].commitments[j].ciphertext_dem, 384);
+      init_to_zero(parties[i].commitments[j].tag, AES_256_GCM_TAG_LENGTH);
+      init_to_zero(parties[i].coins[j], COMMITMENTQROMCOINSBYTES);
+      init_to_zero(parties[i].masterkey[j], KEX_SSBYTES);
+      init_to_zero(parties[i].xs[j], KEX_SSBYTES);
+    }
+
     kem_qrom_keypair(parties[i].public_key,
                      parties[i].secret_key);
 

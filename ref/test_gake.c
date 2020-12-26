@@ -74,7 +74,7 @@ int main(int argc, char** argv){
       }
       pointer_to_parties[i].acc = 0;
       pointer_to_parties[i].term = 1;
-      // return 1;
+      return 1;
     }
 
     if (result == 0) {

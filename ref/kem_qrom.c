@@ -17,7 +17,7 @@ void kem_qrom_encaps(unsigned char* pk, unsigned char* coins,
 
   hash_h(hash_coins, coins, KYBER_SYMBYTES);
   indcpa_enc(c, coins, pk, hash_coins);
-  hash_g(K, coins, KYBER_SYMBYTES);
+  hash_h(K, coins, KYBER_SYMBYTES);
 }
 
 void kem_qrom_decaps(unsigned char* pk, unsigned char* sk, unsigned char* c,
@@ -35,11 +35,11 @@ void kem_qrom_decaps(unsigned char* pk, unsigned char* sk, unsigned char* c,
   indcpa_enc(c_prime, m_prime, pk, hash_m);
 
   if(memcmp(c_prime, c, KYBER_INDCPA_BYTES) != 0) {
-    hash_g(hash_key, c, KYBER_SYMBYTES);
+    hash_h(hash_key, c, KYBER_SYMBYTES);
     memcpy(K, hash_key, KYBER_SYMBYTES);
     printf("Error decaps\n");
   } else {
-    hash_g(hash_key, m_prime, KYBER_SYMBYTES);
+    hash_h(hash_key, m_prime, KYBER_SYMBYTES);
     memcpy(K, hash_key, KYBER_SYMBYTES);
   }
 }

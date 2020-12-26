@@ -121,8 +121,19 @@ void init_parties(Party* parties, int num_parties) {
       memcpy(parties[i].pids[j], pid, 20);
     }
 
+    for (int j = 0; j < num_parties; j++) {
+      init_to_zero(parties[i].commitments[j].ciphertext_kem, KYBER_CIPHERTEXTBYTES);
+      init_to_zero(parties[i].commitments[j].ciphertext_dem, 384);
+      init_to_zero(parties[i].commitments[j].tag, AES_256_GCM_TAG_LENGTH);
+      init_to_zero(parties[i].coins[j], COMMITMENTCOINSBYTES);
+      init_to_zero(parties[i].masterkey[j], KEX_SSBYTES);
+      init_to_zero(parties[i].xs[j], KEX_SSBYTES);
+    }
+
     init_to_zero(parties[i].sid, KEX_SSBYTES);
     init_to_zero(parties[i].sk, KEX_SSBYTES);
+    init_to_zero(parties[i].key_left, KEX_SSBYTES);
+    init_to_zero(parties[i].key_right, KEX_SSBYTES);
 
     crypto_kem_keypair(parties[i].public_key,
                        parties[i].secret_key);

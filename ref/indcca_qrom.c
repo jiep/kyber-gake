@@ -45,7 +45,7 @@ int pke_qrom_enc(unsigned char* m,
   // printf("KYBER_INDCPA_BYTES: %d\n", KYBER_INDCPA_BYTES);
   // printf("sizeof: %zu\n", sizeof(*ciphertext_kem));
 
-  int ret = gcm_encrypt(m, strlen((char*) m),
+  int ret = gcm_encrypt(m, sizeof(m),
                         aad, 0,
                         K,
                         iv, AES_256_IVEC_LENGTH,

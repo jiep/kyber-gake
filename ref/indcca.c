@@ -57,10 +57,10 @@ int pke_enc(unsigned char* m,
   // printf("K: ");
   // print_key(K, AES_256_KEY_LENGTH);
 
-  int ret = gcm_encrypt(m, strlen((char*) m),
+  int ret = gcm_encrypt(m, sizeof(m),
                         aad, strlen((char*) aad),
                         K,
-                        iv, strlen((char*) iv),
+                        iv, AES_256_IVEC_LENGTH,
                         ciphertext_dem,
                         tag);
 
