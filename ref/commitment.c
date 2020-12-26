@@ -49,8 +49,8 @@ int commit(unsigned char* pk,
                   iv,
                   coins_kem);
 
-  printf("Inside commit function: \n");
-  print_commitment(commitment);
+  // printf("Inside commit function: \n");
+  // print_commitment(commitment);
   return ret;
 }
 
@@ -63,9 +63,9 @@ int check_commitment(unsigned char* pk,
 
   commit(pk, m, 384, coins, commitment);
 
-  printf("Inside check_commitment function: \n");
-  print_commitment(commitment);
-  print_commitment(commitment_check);
+  // printf("Inside check_commitment function: \n");
+  // print_commitment(commitment);
+  // print_commitment(commitment_check);
 
   int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_CIPHERTEXTBYTES);
   int ret_ct_dem = memcmp(commitment->ciphertext_dem, commitment_check->ciphertext_dem, 384);
