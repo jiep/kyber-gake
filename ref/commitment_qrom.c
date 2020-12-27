@@ -52,26 +52,8 @@ int check_commitment(unsigned char* pk,
 
   commit(pk, m, coins, commitment);
 
-  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-  // print_commitment(commitment_check);
-  // print_commitment(commitment);
-
-  // printf("Inside-----\n");
-  // print_commitment(commitment);
-  // print_commitment(commitment_check);
-
-  // printf("Public key (in): ");
-  // print_short_key(pk, CRYPTO_PUBLICKEYBYTES, 10);
-  //
-  // printf("Coins (check): ");
-  // print_key(coins, COMMITMENTQROMCOINSBYTES);
-  // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-
-
-
   int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_INDCPA_BYTES);
   int ret_ct_dem = memcmp(commitment->ciphertext_dem, commitment_check->ciphertext_dem, 384);
-  // int ret_iv     = memcmp(commitment->iv, commitment_check->iv, AES_256_IVEC_LENGTH);
   int ret_tag    = memcmp(commitment->tag, commitment_check->tag, AES_256_GCM_TAG_LENGTH);
 
   free(commitment);

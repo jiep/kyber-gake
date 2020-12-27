@@ -6,9 +6,13 @@
 #define COMMITMENTCOINSBYTES (AES_256_IVEC_LENGTH + KEX_SSBYTES)
 #endif
 
+#ifndef DEM_LEN
+#define DEM_LEN (KEX_SSBYTES)
+#endif
+
 typedef struct Commitment {
     unsigned char ciphertext_kem[KYBER_CIPHERTEXTBYTES];
-    unsigned char ciphertext_dem[384];
+    unsigned char ciphertext_dem[DEM_LEN];
     unsigned char tag[AES_256_GCM_TAG_LENGTH];
 } Commitment;
 

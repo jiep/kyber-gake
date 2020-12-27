@@ -8,6 +8,7 @@
 #include "kem_det.h"
 
 void print_data(unsigned char* m,
+                int len_m,
                 unsigned char* pk,
                 unsigned char* ciphertext_kem,
                 unsigned char* ciphertext_dem,
@@ -16,10 +17,10 @@ void print_data(unsigned char* m,
                 unsigned char* coins) {
 
   printf("Ciphertext KEM: ");
-  print_short_key(ciphertext_kem, KYBER_CIPHERTEXTBYTES, 10);
+  print_key(ciphertext_kem, KYBER_CIPHERTEXTBYTES);
 
   printf("Ciphertext DEM: ");
-  print_short_key(ciphertext_dem, 384, 10);
+  print_key(ciphertext_dem, 32);
 
   printf("Tag: ");
   print_key(tag, AES_256_GCM_TAG_LENGTH);
@@ -33,7 +34,7 @@ void print_data(unsigned char* m,
   printf("\tpk: ");
   print_short_key(pk, CRYPTO_PUBLICKEYBYTES, 10);
 
-  printf("m: %s\n", m);
+  print_key(m, len_m);
 }
 
 int pke_keypair(unsigned char* pk, unsigned char* sk) {
@@ -55,17 +56,12 @@ int pke_enc(unsigned char* m,
 
   crypto_kem_det_enc(ciphertext_kem, K, pk, coins);
 
-  // printf("K: ");
-  // print_key(K, AES_256_KEY_LENGTH);
-
   int ret = gcm_encrypt(m, len_m,
                         aad, strlen((char*) aad),
                         K,
                         iv, AES_256_IVEC_LENGTH,
                         ciphertext_dem,
                         tag);
-
-  // print_data(m, pk, ciphertext_kem, ciphertext_dem, tag, iv, coins);
 
   return ret;
 

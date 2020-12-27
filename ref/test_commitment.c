@@ -20,7 +20,7 @@ int main() {
 
   randombytes(m, 1000);
   printf("m: ");
-  print_key(m, 384);
+  print_key(m, DEM_LEN);
 
   randombytes(coins, COMMITMENTCOINSBYTES);
   printf("coins: ");
@@ -29,7 +29,7 @@ int main() {
   Commitment* commitment = (Commitment*) malloc(sizeof(Commitment));
   Commitment* commitment2 = (Commitment*) malloc(sizeof(Commitment));
 
-  commit(pk, m, 384, coins, commitment);
+  commit(pk, m, DEM_LEN, coins, commitment);
 
   print_commitment(commitment);
   printf(".............................................................\n");
@@ -55,7 +55,7 @@ int main() {
   }
 
   // unsigned char m3[1000] = "Hello! This a commitment2.";
-  // commit(pk, m2, 384, coins, commitment);
+  // commit(pk, m2, DEM_LEN, coins, commitment);
   //
   // int equal2 = check_commitment(pk, m, coins, commitment);
   //
@@ -65,7 +65,7 @@ int main() {
   //   printf("Commitments are NOT equal!\n");
   // }
   //
-  // commit(pk, m3, 384, coins2, commitment);
+  // commit(pk, m3, DEM_LEN, coins2, commitment);
   //
   // randombytes(coins2, COMMITMENTCOINSBYTES);
   // printf("coins2: ");

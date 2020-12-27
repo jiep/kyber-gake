@@ -1,6 +1,7 @@
 // https://wiki.openssl.org/index.php/EVP_Authenticated_Encryption_and_Decryption#Authenticated_Decryption_using_GCM_mode
 
 void print_data(unsigned char* m,
+                int len_m,
                 unsigned char* pk,
                 unsigned char* ciphertext_kem,
                 unsigned char* ciphertext_dem,
