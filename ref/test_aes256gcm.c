@@ -33,7 +33,7 @@ int main() {
   int ciphertext_len = gcm_encrypt(plaintext, plaintext_len,
                                    aad, aad_len,
                                    key,
-                                   iv, iv_len,
+                                   iv,
                                    ciphertext,
                                    tag);
 

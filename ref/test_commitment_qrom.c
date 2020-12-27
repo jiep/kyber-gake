@@ -13,7 +13,7 @@ int main() {
   unsigned char sk[KYBER_INDCPA_SECRETKEYBYTES];
   unsigned char m[1000] = "Hello! This a commitment.";
   unsigned char coins[COMMITMENTQROMCOINSBYTES];
-  unsigned char coins2[COMMITMENTQROMCOINSBYTES];
+  // unsigned char coins2[COMMITMENTQROMCOINSBYTES];
 
   pke_qrom_keypair(pk, sk);
 

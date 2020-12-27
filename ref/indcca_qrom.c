@@ -49,7 +49,7 @@ int pke_qrom_enc(unsigned char* m,
   int ret = gcm_encrypt(m, len_m,
                         aad, 0,
                         K,
-                        iv, AES_256_IVEC_LENGTH,
+                        iv,
                         ciphertext_dem,
                         tag);
 

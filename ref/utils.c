@@ -41,7 +41,7 @@ void print_short_key_sep(uint8_t *key, int length, int show, char* sep) {
   for (int i = length - show; i < length; i++) {
     printf("%02x", key[i]);
   }
-  printf(sep);
+  printf("%s", sep);
 }
 
 void itoa(int n, char s[]) {

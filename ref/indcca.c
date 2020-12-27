@@ -59,7 +59,7 @@ int pke_enc(unsigned char* m,
   int ret = gcm_encrypt(m, len_m,
                         aad, strlen((char*) aad),
                         K,
-                        iv, AES_256_IVEC_LENGTH,
+                        iv,
                         ciphertext_dem,
                         tag);
 

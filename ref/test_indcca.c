@@ -8,7 +8,7 @@
 
 int main() {
 
-  int SHOW = 10;
+  // int SHOW = 10;
 
   unsigned char pk[CRYPTO_PUBLICKEYBYTES];
   unsigned char sk[CRYPTO_SECRETKEYBYTES];
