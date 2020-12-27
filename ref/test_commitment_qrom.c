@@ -25,7 +25,7 @@ int main() {
     printf("coins: ");
     print_key(coins, COMMITMENTQROMCOINSBYTES);
 
-    commit(pk, m, coins, commitment);
+    commit(pk, m, DEM_QROM_LEN, coins, commitment);
 
     print_commitment(commitment);
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "indcca_qrom.h"
 #include "utils.h"
@@ -29,8 +30,8 @@ int main() {
   randombytes(iv, AES_256_IVEC_LENGTH);
 
   unsigned char m[2000] = "This is a test";
-
-  int ciphertext_dem_len = pke_qrom_enc(m, pk, ciphertext_kem, ciphertext_dem, tag, iv, coins);
+  int len_m = strlen((char*) m);
+  int ciphertext_dem_len = pke_qrom_enc(m, len_m, pk, ciphertext_kem, ciphertext_dem, tag, iv, coins);
 
   if (ciphertext_dem_len == -1) {
     printf("Error!\n");

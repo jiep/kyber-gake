@@ -1,6 +1,7 @@
 int pke_qrom_keypair(unsigned char* pk, unsigned char* sk);
 
 int pke_qrom_enc(unsigned char* m,
+                 int len_m,
                  unsigned char* pk,
                  unsigned char* ciphertext_kem,
                  unsigned char* ciphertext_dem,

@@ -8,12 +8,13 @@
 
 void print_commitment(CommitmentQROM* commitment) {
   print_short_key_sep(commitment->ciphertext_kem, KYBER_INDCPA_BYTES, 10, "|");
-  print_short_key_sep(commitment->ciphertext_dem, 384, 10, "|");
+  print_short_key_sep(commitment->ciphertext_dem, DEM_QROM_LEN, 10, "|");
   print_key(commitment->tag, AES_256_GCM_TAG_LENGTH);
 }
 
 int commit(unsigned char* pk,
            unsigned char* m,
+           int len_m,
            unsigned char* coins,
            CommitmentQROM* commitment) {
 
@@ -33,7 +34,7 @@ int commit(unsigned char* pk,
    // printf("coins_kem (in): ");
    // print_key(coins_kem, KEX_SSBYTES);
 
-   return pke_qrom_enc(m,
+   return pke_qrom_enc(m, len_m,
                        pk,
                        commitment->ciphertext_kem,
                        commitment->ciphertext_dem,
@@ -50,10 +51,10 @@ int check_commitment(unsigned char* pk,
 
   CommitmentQROM* commitment = (CommitmentQROM*) malloc(sizeof(CommitmentQROM));
 
-  commit(pk, m, coins, commitment);
+  commit(pk, m, DEM_QROM_LEN, coins, commitment);
 
   int ret_ct_kem = memcmp(commitment->ciphertext_kem, commitment_check->ciphertext_kem, KYBER_INDCPA_BYTES);
-  int ret_ct_dem = memcmp(commitment->ciphertext_dem, commitment_check->ciphertext_dem, 384);
+  int ret_ct_dem = memcmp(commitment->ciphertext_dem, commitment_check->ciphertext_dem, DEM_QROM_LEN);
   int ret_tag    = memcmp(commitment->tag, commitment_check->tag, AES_256_GCM_TAG_LENGTH);
 
   free(commitment);

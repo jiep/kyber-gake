@@ -7,9 +7,13 @@
 #define COMMITMENTQROMCOINSBYTES (AES_256_IVEC_LENGTH + KYBER_INDCPA_MSGBYTES)
 #endif
 
+#ifndef DEM_QROM_LEN
+#define DEM_QROM_LEN (KYBER_INDCPA_MSGBYTES)
+#endif
+
 typedef struct CommitmentQROM {
     unsigned char ciphertext_kem[KYBER_INDCPA_BYTES];
-    unsigned char ciphertext_dem[384];
+    unsigned char ciphertext_dem[DEM_QROM_LEN];
     unsigned char tag[AES_256_GCM_TAG_LENGTH];
 } CommitmentQROM;
 
@@ -17,6 +21,7 @@ void print_commitment(CommitmentQROM* commitment);
 
 int commit(unsigned char* pk,
            unsigned char* m,
+           int len_m,
            unsigned char* coins,
            CommitmentQROM* commitment);
 

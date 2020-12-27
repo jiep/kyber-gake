@@ -125,7 +125,7 @@ void init_parties(Party* parties, int num_parties) {
 
     for (int j = 0; j < num_parties; j++) {
       init_to_zero(parties[i].commitments[j].ciphertext_kem, KYBER_INDCPA_MSGBYTES);
-      init_to_zero(parties[i].commitments[j].ciphertext_dem, 384);
+      init_to_zero(parties[i].commitments[j].ciphertext_dem, DEM_QROM_LEN);
       init_to_zero(parties[i].commitments[j].tag, AES_256_GCM_TAG_LENGTH);
       init_to_zero(parties[i].coins[j], COMMITMENTQROMCOINSBYTES);
       init_to_zero(parties[i].masterkey[j], KEX_SSBYTES);
@@ -238,7 +238,7 @@ void compute_xs_commitments(Party* parties, int num_parties) {
 
     xor_keys(parties[i].key_right, parties[i].key_left, xi);
     randombytes(ri, COMMITMENTQROMCOINSBYTES);
-    commit(parties[i].public_key, xi, ri, &ci);
+    commit(parties[i].public_key, xi, DEM_QROM_LEN, ri, &ci);
 
     // printf("Coins (out): ");
     // print_key(ri, COMMITMENTQROMCOINSBYTES);
