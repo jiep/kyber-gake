@@ -3,10 +3,10 @@ NUM_PARTIES:
   - 10
   - 50
   - 100
-  # - 300
-  # - 500
-  # - 1000
-TRIALS: 10
+  - 300
+  - 500
+  - 1000
+TRIALS: 100
 FOLDER: "build"
 BINARY: "test_gake"
 OUTPUT_FOLDER: "results"
