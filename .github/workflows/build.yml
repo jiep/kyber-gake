@@ -50,9 +50,8 @@ jobs:
 
     - name: Run tests
       run: |
-        mkdir -p build build/{ref,avx2} results
-        mv binaries/*_ref build/ref
-        mv binaries/*_avx2 build/avx2
+        mkdir -p build results
+        mv binaries build
         chmod +x build/ref/*
         chmod +x build/avx2/*
         virtualenv --python=python3 venv
