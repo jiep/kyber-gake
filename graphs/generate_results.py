@@ -29,6 +29,7 @@ def main():
 
     SECURITY = [512, 768, 1024]
     TYPE = ["QROM", "ROM"]
+    IMPLEMENTATIONS = ["avx2", "ref"]
 
     if(len(sys.argv) != 2):
         print("You must provide a config file (e.g. config.yaml)", flush=True)
@@ -45,21 +46,22 @@ def main():
     results = np.zeros((len(SECURITY), len(config["NUM_PARTIES"]), len(TYPE), config["TRIALS"], 10))
 
     results_file = open("{}/results.csv".format(config["OUTPUT_FOLDER"]), "w")
-    results_file.write("security,parties,type,time_init,time_round12,time_round3,time_round4,time_total,percentage_init,percentage_round12,percentage_round3,percentage_round4,percentage_total\n")
-    for (i, security) in enumerate(SECURITY):
-        for (j, parties) in enumerate(config["NUM_PARTIES"]):
-            for (k, type) in enumerate(TYPE):
-                for trial in range(config["TRIALS"]):
-                    if type == "QROM":
-                        bin = "{}/{}_qrom{}_ref {}".format(config["FOLDER"], config["BINARY"], security, parties)
-                    else:
-                        bin = "{}/{}{}_ref {}".format(config["FOLDER"], config["BINARY"], security, parties)
+    results_file.write("implementation,security,parties,type,time_init,time_round12,time_round3,time_round4,time_total,percentage_init,percentage_round12,percentage_round3,percentage_round4,percentage_total\n")
+    for implementation in IMPLEMENTATIONS:
+        for (i, security) in enumerate(SECURITY):
+            for (j, parties) in enumerate(config["NUM_PARTIES"]):
+                for (k, type) in enumerate(TYPE):
+                    for trial in range(config["TRIALS"]):
+                        if type == "QROM":
+                            bin = "{}/{}/{}_qrom{}_{} {}".format(config["FOLDER"], implementation, config["BINARY"], security, implementation, parties)
+                        else:
+                            bin = "{}/{}/{}{}_{} {}".format(config["FOLDER"], implementation, config["BINARY"], security, implementation, parties)
 
-                    print("({}) {}".format(trial, bin), flush=True)
+                        print("({}) {}".format(trial, bin), flush=True)
 
-                    output = subprocess.Popen(bin, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+                        output = subprocess.Popen(bin, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
 
-                    results_file.write("{},{},{},{}\n".format(security, parties, type, ",".join(parse(output))))
+                        results_file.write("{},{},{},{},{}\n".format(implementation, security, parties, type, ",".join(parse(output))))
 
     results_file.close()
 

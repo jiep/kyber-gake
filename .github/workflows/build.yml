@@ -27,8 +27,11 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: binaries
-        path: ./build/ref/test_gake*
+        path: |
+          ./build/ref/test_gake*
+          ./build/avx2/test_gake*
         retention-days: 7
+        if-no-files-found: error
 
   tests:
     runs-on: ubuntu-latest
@@ -47,9 +50,11 @@ jobs:
 
     - name: Run tests
       run: |
-        mkdir -p build build/ref results
-        mv binaries/* build/ref
+        mkdir -p build build/{ref, avx2} results
+        mv binaries/*_ref build/ref
+        mv binaries/*_avx2 build/avx2
         chmod +x build/ref/*
+        chmod +x build/avx2/*
         virtualenv --python=python3 venv
         source venv/bin/activate
         pip install -r graphs/requirements.txt

@@ -6,7 +6,7 @@ NUM_PARTIES:
   # - 300
   # - 500
   # - 1000
-TRIALS: 1000
-FOLDER: "build/ref"
+TRIALS: 10
+FOLDER: "build"
 BINARY: "test_gake"
 OUTPUT_FOLDER: "results"
