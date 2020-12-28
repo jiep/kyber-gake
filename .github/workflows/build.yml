@@ -50,7 +50,7 @@ jobs:
 
     - name: Run tests
       run: |
-        mkdir -p build build/{ref, avx2} results
+        mkdir -p build build/{ref,avx2} results
         mv binaries/*_ref build/ref
         mv binaries/*_avx2 build/avx2
         chmod +x build/ref/*
