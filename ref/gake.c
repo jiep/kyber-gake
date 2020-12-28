@@ -47,9 +47,13 @@ void two_ake(uint8_t *pka, uint8_t *pkb, uint8_t *ska, uint8_t *skb, uint8_t *ka
   kex_ake_sharedA(ka, ake_sendb, tk, eska, ska); // Run by Alice
 }
 
-void concat_masterkey(MasterKey* mk, int num_parties, uint8_t *concat_mk) {
+void concat_masterkey(MasterKey* mk, Pid* pids, int num_parties, uint8_t *concat_mk) {
   for (int i = 0; i < num_parties; i++) {
     memcpy(concat_mk + i*KEX_SSBYTES, mk[i], KEX_SSBYTES);
+  }
+
+  for (int j = 0; j < num_parties; j++) {
+    memcpy(concat_mk + num_parties*KEX_SSBYTES + 20*j, pids[j], 20);
   }
 }
 
@@ -163,10 +167,10 @@ void free_parties(Party* parties, int num_parties) {
 
 void compute_sk_sid(Party* parties, int num_parties) {
   for (int i = 0; i < num_parties; i++) {
-    unsigned char mki[KEX_SSBYTES*num_parties];
+    unsigned char mki[(KEX_SSBYTES + 20*sizeof(char))*num_parties];
 
     // Concat master key
-    concat_masterkey(parties[i].masterkey, num_parties, mki);
+    concat_masterkey(parties[i].masterkey, parties[i].pids, num_parties, mki);
 
     unsigned char sk_sid[2*KEX_SSBYTES];
 

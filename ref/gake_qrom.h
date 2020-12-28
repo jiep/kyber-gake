@@ -35,7 +35,7 @@ void xor_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_out);
 void two_ake(uint8_t *pki, uint8_t *pkj, uint8_t *ski, uint8_t *skj, uint8_t *ki, uint8_t *kj, int i, int j);
 void print_party(Party* parties, int i, int num_parties, int show);
 void print_parties(Party* parties, int num_parties, int show);
-void concat_masterkey(MasterKey* mk, int num_parties, uint8_t *concat_mk);
+void concat_masterkey(MasterKey* mk, Pid* pids, int num_parties, uint8_t *concat_mk);
 void init_parties(Party* parties, int num_parties);
 void free_parties(Party* parties, int num_parties);
 void compute_sk_sid(Party* parties, int num_parties);
