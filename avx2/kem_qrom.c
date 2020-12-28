@@ -16,9 +16,13 @@ void kem_qrom_encaps(unsigned char* pk, unsigned char* coins,
   __attribute__((aligned(32)))
   uint8_t hash_coins[KYBER_SYMBYTES];
 
-  hash_h(hash_coins, coins, KYBER_SYMBYTES);
-  indcpa_enc(c, coins, pk, hash_coins);
-  hash_h(K, coins, KYBER_SYMBYTES);
+  __attribute__((aligned(32)))
+  uint8_t buf_coins[KYBER_SYMBYTES];
+  memcpy(buf_coins, coins, KYBER_SYMBYTES);
+
+  hash_h(hash_coins, buf_coins, KYBER_SYMBYTES);
+  indcpa_enc(c, buf_coins, pk, hash_coins);
+  hash_h(K, buf_coins, KYBER_SYMBYTES);
 }
 
 void kem_qrom_decaps(unsigned char* pk, unsigned char* sk, unsigned char* c,
