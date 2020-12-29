@@ -1,3 +1,6 @@
+#ifndef INDCCA_QROM_H
+#define INDCCA_QROM_H
+
 int pke_qrom_keypair(unsigned char* pk, unsigned char* sk);
 
 int pke_qrom_enc(unsigned char* m,
@@ -17,3 +20,5 @@ int pke_qrom_dec(unsigned char* pk,
                  unsigned char* tag,
                  unsigned char* iv,
                  unsigned char* m);
+
+#endif

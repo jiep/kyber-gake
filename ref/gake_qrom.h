@@ -1,3 +1,6 @@
+#ifndef GAKE_QROM_H
+#define GAKE_QROM_H
+
 #include <time.h>
 
 #include "kex.h"
@@ -51,3 +54,5 @@ void print_stats(clock_t end_init,
                  clock_t end_3,
                  clock_t end_4,
                  clock_t begin_total);
+
+#endif
