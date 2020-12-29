@@ -25,26 +25,11 @@ int pke_qrom_enc(unsigned char* m,
   unsigned char K[KYBER_SYMBYTES];
   unsigned char ct[KYBER_INDCPA_BYTES];
 
-  // printf("pk (encaps): ");
-  // print_short_key(pk, KYBER_INDCPA_PUBLICKEYBYTES, 10);
-
   unsigned char* aad = (unsigned char*) "";
 
   kem_qrom_encaps(pk, coins, K, ct);
 
   memcpy(ciphertext_kem, ct, KYBER_INDCPA_BYTES);
-
-  // printf("K (encaps): ");
-  // print_short_key(K, KYBER_SYMBYTES, 10);
-  //
-  // printf("coins (encaps): ");
-  // print_short_key(coins, KYBER_INDCPA_MSGBYTES, 10);
-
-  // printf("ct (encaps): ");
-  // print_short_key(ciphertext_kem, KYBER_INDCPA_BYTES, 10);
-
-  // printf("KYBER_INDCPA_BYTES: %d\n", KYBER_INDCPA_BYTES);
-  // printf("sizeof: %zu\n", sizeof(*ciphertext_kem));
 
   int ret = gcm_encrypt(m, len_m,
                         aad, 0,
@@ -52,8 +37,6 @@ int pke_qrom_enc(unsigned char* m,
                         iv,
                         ciphertext_dem,
                         tag);
-
-  // print_data(m, pk, ciphertext_kem, ciphertext_dem, tag, iv, coins);
 
   return ret;
 }
@@ -67,15 +50,6 @@ int pke_qrom_dec(unsigned char* pk, unsigned char* sk,
                  unsigned char* m) {
 
   unsigned char K_prime[KYBER_SYMBYTES];
-
-  // printf("pk (decaps): ");
-  // print_short_key(pk, KYBER_INDCPA_PUBLICKEYBYTES, 10);
-  //
-  // printf("sk (decaps): ");
-  // print_short_key(sk, KYBER_INDCPA_SECRETKEYBYTES, 10);
-  //
-  // printf("ct (decaps): ");
-  // print_short_key(ciphertext_kem, KYBER_INDCPA_BYTES, 10);
 
   unsigned char* aad = (unsigned char*) "";
 

@@ -30,8 +30,6 @@ void kem_qrom_decaps(unsigned char* pk, unsigned char* sk, unsigned char* c,
 
   indcpa_dec(m_prime, c, sk);
   hash_h(hash_m, m_prime, KYBER_SYMBYTES);
-  // printf("coins (decaps): ");
-  // print_short_key(m_prime, KYBER_INDCPA_MSGBYTES, 10);
   indcpa_enc(c_prime, m_prime, pk, hash_m);
 
   if(memcmp(c_prime, c, KYBER_INDCPA_BYTES) != 0) {

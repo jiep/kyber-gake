@@ -20,9 +20,6 @@ int main() {
 
   pke_qrom_keypair(pk, sk);
 
-  // printf("pk: ");
-  // print_short_key(pk, KYBER_INDCPA_PUBLICKEYBYTES, 10);
-  //
   printf("sk: (encaps)");
   print_short_key(sk, KYBER_INDCPA_SECRETKEYBYTES, 10);
 
@@ -37,23 +34,6 @@ int main() {
     printf("Error!\n");
     return 1;
   }
-
-  // printf("Dem len: %d\n", ciphertext_dem_len);
-
-  // printf("ct_kem: ");
-  // print_short_key(ciphertext_kem, KYBER_INDCPA_BYTES, 10);
-  //
-  // printf("ct_dem: ");
-  // print_short_key(ciphertext_dem, 2000, 10);
-  //
-  // printf("tag: ");
-  // print_key(tag, AES_256_GCM_TAG_LENGTH);
-  //
-  // printf("iv: ");
-  // print_key(iv, AES_256_IVEC_LENGTH);
-  //
-  // printf("coins: ");
-  // print_key(coins, KYBER_INDCPA_MSGBYTES);
 
   unsigned char m_dec[2000];
 

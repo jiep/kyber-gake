@@ -263,13 +263,9 @@ void compute_xs_commitments(Party* parties, int num_parties) {
     memcpy(msg + KEX_SSBYTES, &buf_int, sizeof(int));
     commit(parties[i].public_key, msg, DEM_LEN, ri, &ci);
 
-    // printf("Coins (out): ");
-    // print_key(ri, COMMITMENTCOINSBYTES);
-
     for (int j = 0; j < num_parties; j++) {
       memcpy(parties[j].xs[i], &xi, KEX_SSBYTES);
       memcpy(parties[j].coins[i], &ri, COMMITMENTCOINSBYTES);
-      // memcpy(parties[j].commitments[i], &ci, KYBER_INDCPA_BYTES);
       parties[j].commitments[i] = ci;
     }
   }

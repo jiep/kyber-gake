@@ -172,13 +172,9 @@ int main(void) {
 
   // // B -> A (left)
   printf("\t B -> A\n");
-  // memcpy(&kb_left, &ka_right, KEX_SSBYTES);
 
   printf("\t\t\t%s: ", getName(kb_right));
   print_key(kb_left, KEX_SSBYTES);
-
-  // printf("\t\t\t%s: ", getName(kb));
-  // print_key(&kb, KEX_SSBYTES);
 
   // XOR keys
   printf("\t\tXored key\n");
@@ -191,18 +187,13 @@ int main(void) {
 
   // // C -> A (right)
   printf("\t C -> A\n");
-  // memcpy(&kc_right, &ka_left, KEX_SSBYTES);
   printf("\t\t\t%s: ", getName(kc_right));
   print_key(kc_right, KEX_SSBYTES);
 
   // // C -> B (left)
   printf("\t C -> B\n");
-  // memcpy(&kc_left, &kb_right, KEX_SSBYTES);
   printf("\t\t\t%s: ", getName(kc_left));
   print_key(kc_left, KEX_SSBYTES);
-
-  // printf("\t\t\t%s: ", getName(kc));
-  // print_key(&kc, KEX_SSBYTES);
 
   // XOR keys
   printf("\t\tXored key\n");
@@ -222,11 +213,6 @@ int main(void) {
   uint8_t commitment_a[KYBER_INDCPA_BYTES];
   uint8_t commitment_b[KYBER_INDCPA_BYTES];
   uint8_t commitment_c[KYBER_INDCPA_BYTES];
-
-  // m = X_i || i; // Fix: concat with i
-  // uint8_t m1_a[KYBER_INDCPA_MSGBYTES];
-  // uint8_t m1_b[KYBER_INDCPA_MSGBYTES];
-  // uint8_t m1_c[KYBER_INDCPA_MSGBYTES];
 
   uint8_t coins_a[KYBER_SYMBYTES];
   uint8_t coins_b[KYBER_SYMBYTES];

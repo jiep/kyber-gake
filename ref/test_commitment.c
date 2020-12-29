@@ -54,31 +54,6 @@ int main() {
     printf("Commitments are NOT equal!\n");
   }
 
-  // unsigned char m3[1000] = "Hello! This a commitment2.";
-  // commit(pk, m2, DEM_LEN, coins, commitment);
-  //
-  // int equal2 = check_commitment(pk, m, coins, commitment);
-  //
-  // if (equal2 == 0) {
-  //   printf("Commitments are equal!\n");
-  // } else {
-  //   printf("Commitments are NOT equal!\n");
-  // }
-  //
-  // commit(pk, m3, DEM_LEN, coins2, commitment);
-  //
-  // randombytes(coins2, COMMITMENTCOINSBYTES);
-  // printf("coins2: ");
-  // print_key(coins2, COMMITMENTCOINSBYTES);
-  //
-  // int equal3 = check_commitment(pk, m, coins2, commitment);
-  //
-  // if (equal3 == 0) {
-  //   printf("Commitments are equal!\n");
-  // } else {
-  //   printf("Commitments are NOT equal!\n");
-  // }
-
   free(commitment);
   free(commitment2);
 

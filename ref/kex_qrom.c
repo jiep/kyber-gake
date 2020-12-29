@@ -18,13 +18,7 @@ void init(unsigned char* pkj,
 
   randombytes(mj, KYBER_INDCPA_MSGBYTES);
 
-  // printf("mj: ");
-  // print_key(mj, KYBER_INDCPA_MSGBYTES);
-
   hash_h(hash_mj, mj, KYBER_SYMBYTES);
-
-  // printf("G(mj): ");
-  // print_key(hash_mj, KYBER_SYMBYTES);
 
   indcpa_enc(cj, mj, pkj, hash_mj);
 
@@ -56,20 +50,8 @@ void der_resp(unsigned char* skj, unsigned char* pki, unsigned char* pkj, unsign
   memcpy(pk_tilde, M, KYBER_INDCPA_PUBLICKEYBYTES);
   memcpy(cj, M + KYBER_INDCPA_PUBLICKEYBYTES, KYBER_INDCPA_BYTES);
 
-  // printf("cj: ");
-  // print_key(cj, KYBER_INDCPA_BYTES);
-
-  // printf("pk': ");
-  // print_key(pk_tilde, KYBER_INDCPA_PUBLICKEYBYTES);
-
   randombytes(mi, KYBER_INDCPA_MSGBYTES);
   randombytes(m_tilde, KYBER_INDCPA_MSGBYTES);
-
-  // printf("mi: ");
-  // print_key(mi, KYBER_INDCPA_MSGBYTES);
-
-  // printf("m~: ");
-  // print_key(m_tilde, KYBER_INDCPA_MSGBYTES);
 
   hash_h(hash_mi, mi, KYBER_SYMBYTES);
   hash_h(hash_mtilde, m_tilde, KYBER_SYMBYTES);
@@ -82,20 +64,9 @@ void der_resp(unsigned char* skj, unsigned char* pki, unsigned char* pkj, unsign
 
   indcpa_dec(mj_prime, cj, skj);
 
-  // printf("mj': ");
-  // print_key(mj_prime, KYBER_INDCPA_MSGBYTES);
-
   hash_h(hash_mjprime, mj_prime, KYBER_SYMBYTES);
 
-  // printf("mj': ");
-  // print_key(mj_prime, KYBER_INDCPA_MSGBYTES);
   indcpa_enc(cj_tilde, mj_prime, pkj, hash_mjprime);
-
-  // printf("cj': ");
-  // print_key(cj_tilde, KYBER_INDCPA_BYTES);
-  //
-  // printf("cj: ");
-  // print_key(cj, KYBER_INDCPA_BYTES);
 
   if(memcmp(cj, cj_tilde, KYBER_INDCPA_BYTES) != 0){
     printf("Error\n");
@@ -115,9 +86,6 @@ void der_resp(unsigned char* skj, unsigned char* pki, unsigned char* pkj, unsign
     memcpy(msg + 3*KYBER_INDCPA_MSGBYTES + 2*sizeof(int), M, KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES);
     memcpy(msg + 3*KYBER_INDCPA_MSGBYTES + 2*sizeof(int) + KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES,
       M_prime, 2*KYBER_INDCPA_BYTES);
-
-    // printf("msg: ");
-    // print_key(msg, 3*KYBER_INDCPA_MSGBYTES + 2*sizeof(int) + KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES + 2*KYBER_INDCPA_BYTES);
 
     hash_h(K, msg, KEX_SSBYTES);
   }
@@ -145,12 +113,6 @@ void der_init(unsigned char* ski, unsigned char* pki, unsigned char* M_prime, un
 
   indcpa_dec(mi_prime, ci, ski);
   indcpa_dec(mi_tilde, c_tilde, sk_tilde);
-
-  // printf("mi': ");
-  // print_key(mi_prime, KYBER_INDCPA_MSGBYTES);
-
-  // printf("mi~: ");
-  // print_key(mi_tilde, KYBER_INDCPA_MSGBYTES);
 
   hash_h(hash_mjprime, mi_prime, KYBER_SYMBYTES);
   indcpa_enc(ci_tilde, mi_prime, pki, hash_mjprime);

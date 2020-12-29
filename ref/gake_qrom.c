@@ -36,8 +36,6 @@ void two_ake(uint8_t *pki, uint8_t *pkj, uint8_t *ski, uint8_t *skj, uint8_t *ki
   unsigned char M[KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES];
   unsigned char M_prime[2*KYBER_INDCPA_BYTES];
   unsigned char st[KYBER_INDCPA_SECRETKEYBYTES + KYBER_INDCPA_MSGBYTES + KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES];
-  // unsigned char K[KEX_SSBYTES];
-  // unsigned char K_prime[KEX_SSBYTES];
 
   init(pkj, M, st);
   der_resp(skj, pki, pkj, M, i, j, ki, M_prime);
@@ -259,13 +257,9 @@ void compute_xs_commitments(Party* parties, int num_parties) {
     memcpy(msg + KEX_SSBYTES, &buf_int, sizeof(int));
     commit(parties[i].public_key, msg, DEM_QROM_LEN, ri, &ci);
 
-    // printf("Coins (out): ");
-    // print_key(ri, COMMITMENTQROMCOINSBYTES);
-
     for (int j = 0; j < num_parties; j++) {
       memcpy(parties[j].xs[i], &xi, KEX_SSBYTES);
       memcpy(parties[j].coins[i], &ri, COMMITMENTQROMCOINSBYTES);
-      // memcpy(parties[j].commitments[i], &ci, KYBER_INDCPA_BYTES);
       parties[j].commitments[i] = ci;
     }
   }

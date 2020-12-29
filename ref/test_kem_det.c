@@ -31,17 +31,11 @@ static int test_keys()
     //Bob derives a secret key and creates a response
     crypto_kem_det_enc(ct, key_b, pk, coins);
 
-    // printf("key_b: ");
-    // print_key(key_b, CRYPTO_BYTES);
-
     printf("ct: ");
     print_short_key(ct, CRYPTO_CIPHERTEXTBYTES, 20);
 
     //Alice uses Bobs response to get her shared key
     crypto_kem_det_dec(key_a, ct, sk);
-
-    // printf("key_a: ");
-    // print_key(key_a, CRYPTO_BYTES);
 
     if(memcmp(key_a, key_b, CRYPTO_BYTES))
       printf("ERROR keys\n");

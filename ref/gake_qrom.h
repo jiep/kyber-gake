@@ -7,7 +7,6 @@
 #include "kex_qrom.h"
 #include "indcpa.h"
 #include "randombytes.h"
-// #include "api.h"
 #include "symmetric.h"
 #include "commitment_qrom.h"
 #include "utils.h"

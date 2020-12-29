@@ -29,24 +29,9 @@ int main() {
 
     init(pkj, M, st);
 
-    // printf("M: ");
-    // print_key(M, KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES);
-
-    // printf("st: ");
-    // print_key(M, KYBER_INDCPA_SECRETKEYBYTES + KYBER_INDCPA_MSGBYTES + KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES);
-
     der_resp(skj, pki, pkj, M, i, j, K, M_prime);
 
-    // printf("K : ");
-    // print_key(K, KEX_SSBYTES);
-
-    // printf("M': ");
-    // print_key(M_prime, 2*KYBER_INDCPA_BYTES);
-
     der_init(ski, pki, M_prime, st, i, j, K_prime);
-
-    // printf("K': ");
-    // print_key(K_prime, KEX_SSBYTES);
 
     if(memcmp(K, K_prime, KEX_SSBYTES) != 0) {
       printf("Error! \n");

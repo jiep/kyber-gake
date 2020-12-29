@@ -8,8 +8,6 @@
 
 int main() {
 
-  // int SHOW = 10;
-
   unsigned char pk[CRYPTO_PUBLICKEYBYTES];
   unsigned char sk[CRYPTO_SECRETKEYBYTES];
   unsigned char ciphertext_kem[CRYPTO_CIPHERTEXTBYTES];
@@ -20,9 +18,6 @@ int main() {
 
   printf("Key generation\n");
   pke_keypair(pk, sk);
-
-  // printf("\tsk: ");
-  // print_short_key(sk, CRYPTO_SECRETKEYBYTES, SHOW);
 
   randombytes(coins, KYBER_SYMBYTES);
 
@@ -45,30 +40,6 @@ int main() {
       printf("Error!\n");
       return 1;
     }
-
-    // printf("\tpk: ");
-    // print_short_key(pk, CRYPTO_PUBLICKEYBYTES, SHOW);
-    // printf("\tciphertext KEM: ");
-    // print_short_key(ciphertext_kem, CRYPTO_CIPHERTEXTBYTES, SHOW);
-    // printf("\tciphertext DEM: ");
-    // print_key(ciphertext_dem, ciphertext_dem_len);
-    // printf("\ttag: ");
-    // print_key(tag, AES_256_GCM_TAG_LENGTH);
-    // printf("\tiv: ");
-    // print_key(iv, AES_256_IVEC_LENGTH);
-
-    // printf("Decryption\n");
-    //
-    // printf("\tsk: ");
-    // print_short_key(sk, CRYPTO_SECRETKEYBYTES, SHOW);
-    // printf("\tciphertext KEM: ");
-    // print_short_key(ciphertext_kem, CRYPTO_CIPHERTEXTBYTES, SHOW);
-    // printf("\tciphertext DEM: ");
-    // print_key(ciphertext_dem, ciphertext_dem_len);
-    // printf("\ttag: ");
-    // print_key(tag, AES_256_GCM_TAG_LENGTH);
-    // printf("\tiv: ");
-    // print_key(iv, AES_256_IVEC_LENGTH);
 
     unsigned char m_dec[2000];
 

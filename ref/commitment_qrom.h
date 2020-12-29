@@ -1,7 +1,6 @@
 #include "kem_qrom.h"
 #include "aes256gcm.h"
 #include "indcpa.h"
-// #include "kex.h"
 
 #ifndef COMMITMENTQROMCOINSBYTES
 #define COMMITMENTQROMCOINSBYTES (AES_256_IVEC_LENGTH + KYBER_INDCPA_MSGBYTES)

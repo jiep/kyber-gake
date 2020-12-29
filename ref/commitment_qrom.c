@@ -4,7 +4,6 @@
 #include "indcca_qrom.h"
 #include "utils.h"
 #include "randombytes.h"
-// #include "api.h"
 
 void print_commitment(CommitmentQROM* commitment) {
   print_short_key_sep(commitment->ciphertext_kem, KYBER_INDCPA_BYTES, 10, "|");
@@ -22,17 +21,8 @@ int commit(unsigned char* pk,
    unsigned char iv[AES_256_IVEC_LENGTH];
    unsigned char coins_kem[KYBER_INDCPA_MSGBYTES];
 
-   // printf("coins (in): ");
-   // print_key(coins, COMMITMENTCOINSBYTES);
-   //
    memcpy(iv, coins, AES_256_IVEC_LENGTH);
    memcpy(coins_kem, coins + AES_256_IVEC_LENGTH, KYBER_INDCPA_MSGBYTES);
-   //
-   // printf("iv (in): ");
-   // print_key(iv, AES_256_IVEC_LENGTH);
-   //
-   // printf("coins_kem (in): ");
-   // print_key(coins_kem, KEX_SSBYTES);
 
    return pke_qrom_enc(m, len_m,
                        pk,
