@@ -7,7 +7,7 @@
 #endif
 
 #ifndef DEM_LEN
-#define DEM_LEN (KEX_SSBYTES)
+#define DEM_LEN (KEX_SSBYTES + sizeof(int))
 #endif
 
 typedef struct Commitment {

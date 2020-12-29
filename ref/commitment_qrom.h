@@ -8,7 +8,7 @@
 #endif
 
 #ifndef DEM_QROM_LEN
-#define DEM_QROM_LEN (KYBER_INDCPA_MSGBYTES)
+#define DEM_QROM_LEN (KYBER_INDCPA_MSGBYTES + sizeof(int))
 #endif
 
 typedef struct CommitmentQROM {

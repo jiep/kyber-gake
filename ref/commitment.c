@@ -41,7 +41,6 @@ int check_commitment(unsigned char* pk,
                      unsigned char* coins,
                      Commitment* commitment_check){
 
-
   Commitment* commitment = (Commitment*) malloc(sizeof(Commitment));
   init_to_zero(commitment->ciphertext_kem, KYBER_CIPHERTEXTBYTES);
   init_to_zero(commitment->ciphertext_dem, DEM_LEN);

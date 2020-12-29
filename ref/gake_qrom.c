@@ -202,8 +202,15 @@ void compute_masterkey(Party* parties, int num_parties) {
 
 int check_commitments(Party* parties, int i, int num_parties) {
   for (int j = 0; j < num_parties; j++) {
+    unsigned char msg[KEX_SSBYTES + sizeof(int)];
+    char buf_int[sizeof(int)];
+    init_to_zero((unsigned char*) buf_int, sizeof(int));
+    itoa(j, buf_int);
+    memcpy(msg, parties[i].xs[j], KEX_SSBYTES);
+    memcpy(msg + KEX_SSBYTES, buf_int, sizeof(int));
+
     int res_check = check_commitment(parties[j].public_key,
-                     parties[i].xs[j],
+                     msg,
                      parties[i].coins[j],
                      &parties[i].commitments[j]);
 
@@ -240,9 +247,18 @@ void compute_xs_commitments(Party* parties, int num_parties) {
     Coins ri;
     CommitmentQROM ci;
 
+    unsigned char msg[KEX_SSBYTES + sizeof(int)];
+    init_to_zero(msg, KEX_SSBYTES + sizeof(int));
+    char buf_int[sizeof(int)];
+    init_to_zero((unsigned char*) buf_int, KEX_SSBYTES + sizeof(int));
+    itoa(i, buf_int);
+
     xor_keys(parties[i].key_right, parties[i].key_left, xi);
     randombytes(ri, COMMITMENTQROMCOINSBYTES);
-    commit(parties[i].public_key, xi, DEM_QROM_LEN, ri, &ci);
+
+    memcpy(msg, &xi, KEX_SSBYTES);
+    memcpy(msg + KEX_SSBYTES, &buf_int, sizeof(int));
+    commit(parties[i].public_key, msg, DEM_QROM_LEN, ri, &ci);
 
     // printf("Coins (out): ");
     // print_key(ri, COMMITMENTQROMCOINSBYTES);
