@@ -7,7 +7,7 @@ mkdir build && cd build
 
 # https://unix.stackexchange.com/questions/283868/bash-script-detecting-change-in-files-from-a-directory
 while inotifywait -e modify /kyber/**/*; do
-  cmake -GNinja .. && \
+  cmake -GNinja -DCMAKE_BUILD_TYPE=Release .. && \
   ninja && \
   sleep 10
 done

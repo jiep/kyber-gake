@@ -10,7 +10,7 @@ COPY monitor-and-compile.sh .
 
 # RUN mkdir build && \
 #   cd build && \
-#   cmake -GNinja .. && \
+#   cmake -GNinja -DCMAKE_BUILD_TYPE=Release .. && \
 #   ninja && ninja test
 
 CMD ["bash", "monitor-and-compile.sh"]
