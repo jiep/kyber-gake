@@ -49,7 +49,7 @@ def main():
     results_file.write("implementation,security,parties,type,time_init,time_round12,time_round3,time_round4,time_total,percentage_init,percentage_round12,percentage_round3,percentage_round4,percentage_total\n")
     for implementation in IMPLEMENTATIONS:
         for (i, security) in enumerate(SECURITY):
-            for (j, parties) in enumerate(config["NUM_PARTIES"]):
+            for (j, parties) in enumerate(reversed(config["NUM_PARTIES"])):
                 for (k, type) in enumerate(TYPE):
                     for trial in range(config["TRIALS"]):
                         if type == "QROM":
