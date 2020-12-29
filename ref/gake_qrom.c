@@ -4,7 +4,6 @@
 #include <time.h>
 
 #include "gake_qrom.h"
-#include "utils.h"
 
 void print_sk(uint8_t *key) {
   for(int j = 0; j < KEX_SSBYTES; j++){
@@ -52,7 +51,7 @@ void concat_masterkey(MasterKey* mk, Pid* pids, int num_parties, uint8_t *concat
   }
 
   for (int j = 0; j < num_parties; j++) {
-    memcpy(concat_mk + num_parties*KEX_SSBYTES + 20*j, pids[j], 20);
+    memcpy(concat_mk + num_parties*KEX_SSBYTES + PID_LENGTH*j, pids[j], PID_LENGTH);
   }
 }
 
@@ -119,9 +118,9 @@ void init_parties(Party* parties, int num_parties) {
     parties[i].xs = malloc(sizeof(X) * num_parties);
 
     for (int j = 0; j < num_parties; j++) {
-      char pid[20];
+      char pid[PID_LENGTH];
       sprintf(pid, "%s %d", "Party", j);
-      memcpy(parties[i].pids[j], pid, 20);
+      memcpy(parties[i].pids[j], pid, PID_LENGTH);
     }
 
     init_to_zero(parties[i].sid, KEX_SSBYTES);
@@ -164,7 +163,7 @@ void free_parties(Party* parties, int num_parties) {
 
 void compute_sk_sid(Party* parties, int num_parties) {
   for (int i = 0; i < num_parties; i++) {
-    unsigned char mki[(KEX_SSBYTES + 20*sizeof(char))*num_parties];
+    unsigned char mki[(KEX_SSBYTES + PID_LENGTH*sizeof(char))*num_parties];
 
     // Concat master key
     concat_masterkey(parties[i].masterkey, parties[i].pids, num_parties, mki);

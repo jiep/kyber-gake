@@ -7,10 +7,11 @@
 // #include "api.h"
 #include "symmetric.h"
 #include "commitment_qrom.h"
+#include "utils.h"
 
 typedef unsigned char MasterKey[KEX_SSBYTES];
 typedef unsigned char X[KEX_SSBYTES];
-typedef char * Pid[20];
+typedef char * Pid[PID_LENGTH];
 typedef unsigned char Coins[COMMITMENTQROMCOINSBYTES];
 
 typedef struct Party {

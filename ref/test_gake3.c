@@ -7,7 +7,6 @@
 #include "symmetric.h"
 #include "randombytes.h"
 #include "gake.h"
-#include "utils.h"
 
 void xor_three_keys(uint8_t *x_a, uint8_t *x_b, uint8_t *x_c, uint8_t *x_out);
 void print_key_start(uint8_t *key, int length, int start);

@@ -103,7 +103,7 @@ void der_resp(unsigned char* skj, unsigned char* pki, unsigned char* pkj, unsign
     // randombytes(key, KEX_SSBYTES);
     // prf(K, KEX_SSBYTES, key, key);
   } else {
-    char str_buf[20];
+    char str_buf[PID_LENGTH];
     unsigned char msg[3*KYBER_INDCPA_MSGBYTES + 2*sizeof(int) + KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES + 2*KYBER_INDCPA_BYTES];
     memcpy(msg, mi, KYBER_INDCPA_MSGBYTES);
     memcpy(msg + KYBER_INDCPA_MSGBYTES, mj_prime, KYBER_INDCPA_MSGBYTES);
@@ -158,7 +158,7 @@ void der_init(unsigned char* ski, unsigned char* pki, unsigned char* M_prime, un
   if(memcmp(ci_tilde, ci, KYBER_INDCPA_BYTES) != 0){
 
   } else {
-    char str_buf[20];
+    char str_buf[PID_LENGTH];
     unsigned char msg[3*KYBER_INDCPA_MSGBYTES + 2*sizeof(int) + KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES + 2*KYBER_INDCPA_BYTES];
     memcpy(msg, mi_prime, KYBER_INDCPA_MSGBYTES);
     memcpy(msg + KYBER_INDCPA_MSGBYTES, mj, KYBER_INDCPA_MSGBYTES);

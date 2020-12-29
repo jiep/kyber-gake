@@ -3,6 +3,10 @@
 
 #define getName(var)  #var
 
+#ifndef PID_LENGTH
+#define PID_LENGTH 20
+#endif
+
 int mod(int x, int y);
 void print_key(uint8_t *key, int length);
 void print_short_key(uint8_t *key, int length, int show);
