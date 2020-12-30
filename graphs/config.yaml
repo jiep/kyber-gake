@@ -10,7 +10,7 @@ NUM_PARTIES:
   - 512
   - 1024
   - 2048
-TRIALS: 5
+TRIALS: 10
 FOLDER: "build"
 BINARY: "test_gake"
 OUTPUT_FOLDER: "results"
