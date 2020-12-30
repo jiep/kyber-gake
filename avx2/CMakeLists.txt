@@ -14,10 +14,12 @@ set(KEM_DET_FILES ${SRCS} kem_det.c randombytes.c utils.c test_kem_det.c)
 set(CCA_FILES ${SRCS} indcca.c kem_det.c aes256gcm.c randombytes.c utils.c test_indcca.c)
 set(COMMITMENT_FILES ${SRCS} kem_det.c indcca.c commitment.c aes256gcm.c randombytes.c utils.c test_commitment.c)
 set(GAKE_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake.c)
+set(GAKE_SPEED_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake_speed.c)
 set(CCA_QROM_FILES ${SRCS_QROM} indcca_qrom.c kem_qrom.c aes256gcm.c randombytes.c utils.c test_indcca_qrom.c)
 set(COMMITMENT_QROM_FILES ${SRCS_QROM} commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c randombytes.c utils.c test_commitment_qrom.c)
 set(KEX_QROM_SRCS ${SRCS_QROM} utils.c indcpa.c kex_qrom.c randombytes.c test_kex_qrom.c)
 set(GAKE_QROM_FILES ${SRCS_QROM} gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom.c)
+set(GAKE_QROM_SPEED_FILES ${SRCS_QROM} gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom_speed.c)
 
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -127,6 +129,17 @@ foreach(X RANGE 2 4)
 	 add_executable(test_gake_qrom${K${X}}_avx2 ${GAKE_QROM_FILES})
 	 target_link_libraries(test_gake_qrom${K${X}}_avx2 PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
 	 target_include_directories(test_gake_qrom${K${X}}_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+
+	 # Plain GAKE speed
+	 add_executable(test_gake_speed${K${X}}_avx2 ${GAKE_SPEED_FILES})
+	 target_link_libraries(test_gake_speed${K${X}}_avx2 PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+	 target_include_directories(test_gake_speed${K${X}}_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+
+	 # Plain GAKE QROM speed
+	 add_executable(test_gake_qrom_speed${K${X}}_avx2 ${GAKE_QROM_SPEED_FILES})
+	 target_link_libraries(test_gake_qrom_speed${K${X}}_avx2 PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+	 target_include_directories(test_gake_qrom_speed${K${X}}_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+
 
 	 # Plain speed
    if(NOT WIN32)

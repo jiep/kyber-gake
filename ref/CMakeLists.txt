@@ -9,7 +9,9 @@ set(KECCAK_FILES fips202.c sha256.c sha512.c)
 set(AES_SRCS ${SRCS} symmetric-aes.c)
 set(GAKE3_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake3.c)
 set(GAKE_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake.c)
+set(GAKE_SPEED_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake_speed.c)
 set(GAKE_QROM_FILES ${SRCS} gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom.c)
+set(GAKE_QROM_SPEED_FILES ${SRCS} gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom_speed.c)
 set(GCM_FILES aes256gcm.c randombytes.c utils.c test_aes256gcm.c)
 set(CCA_FILES ${SRCS} indcca.c kem_det.c aes256gcm.c randombytes.c utils.c test_indcca.c)
 set(CCA_QROM_FILES ${SRCS} indcca_qrom.c kem_qrom.c aes256gcm.c randombytes.c utils.c test_indcca_qrom.c)
@@ -113,6 +115,15 @@ foreach(X RANGE 2 4)
 	 # Plain GAKE 3
    add_executable(test_gake3-${K${X}}_ref ${GAKE3_FILES})
    target_link_libraries(test_gake3-${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+
+	 # Plain GAKE speed
+   add_executable(test_gake_speed${K${X}}_ref ${GAKE_SPEED_FILES})
+   target_link_libraries(test_gake_speed${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+
+	 # Plain GAKE QROM speed
+	 add_executable(test_gake_qrom_speed${K${X}}_ref ${GAKE_QROM_SPEED_FILES})
+	 target_link_libraries(test_gake_qrom_speed${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
+
 
    # Plain speed
    if(NOT WIN32)
