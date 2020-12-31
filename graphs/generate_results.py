@@ -114,10 +114,9 @@ def main():
 
                         print("({}) {}".format(trial, bin), flush=True)
                         output = subprocess.Popen(bin, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
-
+                        print(output)
                         print("({}) {}".format(trial, bin_speed), flush=True)
                         output_speed = subprocess.Popen(bin_speed, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
-
 
                         results_file.write("{},{},{},{},{}\n".format(implementation, security, parties, type, ",".join(parse(output))))
                         results_speed_file.write("{},{},{},{},{}\n".format(implementation, security, parties, type, ",".join(parse_speed(output_speed, type))))

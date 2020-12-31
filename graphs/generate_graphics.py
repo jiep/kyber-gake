@@ -12,23 +12,32 @@ from matplotlib import pyplot as plt
 
 SECURITY = [512, 768, 1024]
 TYPE = ["QROM", "ROM"]
+IMPLEMENTATIONS = ["avx2", "ref"]
+
 
 def plot_total_time_by_time(data, config):
 
-    fig, axes = plt.subplots(1,3, figsize=(16,8))
+    fig, axes = plt.subplots(2,4, figsize=(25,10), sharey=False)
     fig.suptitle('Total time')
+    fig.subplots_adjust(hspace=0.5, wspace=0.5)
 
-    for (i, sec) in enumerate(SECURITY):
-        df = data[data['security'] == sec]
-        df = df[['parties', 'type', 'time_total']]
-        df = df.groupby(['type', 'parties']).agg({'time_total': np.mean})
+    for (j, impl) in enumerate(IMPLEMENTATIONS):
+        df = data[data['implementation'] == impl]
+        for (i, sec) in enumerate(SECURITY):
+            df2 = df[df["security"] == sec]
+            df2 = df2[['parties', 'type', 'time_total']]
 
-        # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        #     print(df)
+            if i == 0:
+                axes[j,i].text(0.5, 0.5, impl, horizontalalignment='center', verticalalignment='center', transform=axes[j,i].transAxes)
+                axes[j,i].set_title('Implementation')
+                axes[j,i].axis('off')
 
-        sns.lineplot(ax=axes[i], x="parties", y="time_total", hue="type", data=df)
-        axes[i].set(xlabel='Number of parties', ylabel='Total time (seconds)')
-        axes[i].set_title('Security level: {}'.format(sec))
+
+            sns.lineplot(ax=axes[j,i+1], x="parties", y="time_total", hue="type", data=df2)
+            axes[j,i+1].set(xlabel='Number of parties', ylabel='Total time (seconds)')
+            axes[j,i+1].set_title('Security level: {}'.format(sec))
+            axes[j,i+1].legend(loc='upper left')
+
 
     figname = "{}/totaltime.png".format(config["OUTPUT_FOLDER"])
     fig.savefig(figname)
