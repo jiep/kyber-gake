@@ -58,6 +58,7 @@ jobs:
         source venv/bin/activate
         pip install -r graphs/requirements.txt
         python graphs/generate_results.py graphs/config.yaml
+        python graphs/generate_graphics.py graphs/config.yaml
 
     - name: Archive results
       uses: actions/upload-artifact@v2
