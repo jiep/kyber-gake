@@ -11,9 +11,9 @@
 #include "kex.h"
 #include "kem_qrom.h"
 
-int test_check_qrom_commitment();
-int test_check_qrom_2_ake();
-int test_check_qrom_kem();
+int test_check_qrom_commitment(int);
+int test_check_qrom_2_ake(int);
+int test_check_qrom_kem(int);
 
 int test_check_qrom_commitment(int tests) {
   double sum_commit = 0;

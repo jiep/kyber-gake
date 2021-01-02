@@ -10,9 +10,9 @@
 #include "kex.h"
 #include "kem_det.h"
 
-int test_check_commitment();
-int test_check_2_ake();
-int test_check_kem();
+int test_check_commitment(int);
+int test_check_2_ake(int);
+int test_check_kem(int);
 
 int test_check_commitment(int tests) {
   double sum_commit = 0;

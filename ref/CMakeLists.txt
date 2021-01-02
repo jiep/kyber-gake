@@ -1,204 +1,103 @@
-set(SRCS kem.c indcpa.c polyvec.c poly.c reduce.c ntt.c cbd.c verify.c)
-set(TEST_SRCS test_kyber.c randombytes.c)
-set(TESTKEX_SRCS test_kex.c randombytes.c kex.c)
-set(SPEED_SRCS test_speed.c speed_print.c cpucycles.c randombytes.c kex.c)
-set(VECTOR_SRCS test_vectors.c)
-set(PQCKAT_SRCS PQCgenKAT_kem.c rng.c)
-set(AES_FILES aes256ctr.c)
-set(KECCAK_FILES fips202.c sha256.c sha512.c)
-set(AES_SRCS ${SRCS} symmetric-aes.c)
-set(GAKE3_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake3.c)
-set(GAKE_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake.c)
-set(GAKE_SPEED_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake_speed.c)
-set(GAKE_QROM_FILES ${SRCS} gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom.c)
-set(GAKE_QROM_SPEED_FILES ${SRCS} gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom_speed.c)
-set(GCM_FILES aes256gcm.c randombytes.c utils.c test_aes256gcm.c)
-set(CCA_FILES ${SRCS} indcca.c kem_det.c aes256gcm.c randombytes.c utils.c test_indcca.c)
-set(CCA_QROM_FILES ${SRCS} indcca_qrom.c kem_qrom.c aes256gcm.c randombytes.c utils.c test_indcca_qrom.c)
-set(COMMITMENT_QROM_FILES ${SRCS} commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c randombytes.c utils.c test_commitment_qrom.c)
-set(KEM_DET_FILES ${SRCS} kem_det.c randombytes.c utils.c test_kem_det.c)
-set(COMMITMENT_FILES ${SRCS} kem_det.c indcca.c commitment.c aes256gcm.c randombytes.c utils.c test_commitment.c)
-set(KEX_QROM_SRCS utils.c indcpa.c kex_qrom.c randombytes.c test_kex_qrom.c)
-set(SRCS_QROM kem_qrom.c utils.c randombytes.c indcpa.c polyvec.c poly.c reduce.c ntt.c cbd.c verify.c test_kem_qrom.c)
+set(KYBER_SRCS kex.c kem.c indcpa.c polyvec.c poly.c ntt.c cbd.c reduce.c verify.c)
+set(KYBER_QROM_SRCS kex.c kex_qrom.c kem.c kem_qrom.c indcpa.c polyvec.c poly.c ntt.c cbd.c reduce.c verify.c)
+set(KYBER_FIPS202_SRCS ${KYBER_SRCS} symmetric-shake.c)
+set(KYBER_QROM_FIPS202_SRCS ${KYBER_QROM_SRCS} symmetric-shake.c)
+set(FIPS202_SRCS fips202.c)
+set(AES256CTR_SRCS aes256ctr.c)
+set(SHA2_SRCS sha256.c sha512.c)
+set(TEST_GAKE_SRCS ${KYBER_SRCS} gake.c utils.c aes256gcm.c kem_det.c commitment.c randombytes.c indcca.c kex.c test_gake.c)
+set(TEST_GAKE_QROM_SRCS ${KYBER_QROM_SRCS} gake_qrom.c utils.c aes256gcm.c kem_qrom.c commitment_qrom.c randombytes.c indcca_qrom.c kex.c test_gake_qrom.c)
+set(TEST_KYBER_SRCS test_kyber.c randombytes.c)
+set(TEST_KEX_SRCS test_kex.c randombytes.c)
+set(TEST_VECTORS_SRCS test_vectors.c)
+set(TEST_SPEED_SRCS test_kyber.c randombytes.c)
+set(TEST_SPEED_GAKE_SRCS ${KYBER_SRCS} gake.c utils.c aes256gcm.c kem_det.c commitment.c randombytes.c indcca.c kex.c test_gake_speed.c)
+set(TEST_SPEED_GAKE_QROM_SRCS ${KYBER_QROM_SRCS} gake_qrom.c utils.c aes256gcm.c kem_qrom.c commitment_qrom.c randombytes.c indcca_qrom.c kex.c test_gake_qrom_speed.c)
 
-
-if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-	add_compile_options(-g)
-	add_compile_options(-Wall)
-	add_compile_options(-Wno-unused-result)
-	add_compile_options(-Wextra)
-	add_compile_options(-Wpedantic)
-	add_compile_options(-Wmissing-prototypes)
-	add_compile_options(-Wredundant-decls)
-	add_compile_options(-Wshadow)
-	add_compile_options(-Wpointer-arith)
-
-elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-	#add_compile_options(-Werror)
-	add_compile_options(-Wall)
-	add_compile_options(-Wextra)
-	add_compile_options(-Wno-unused-result)
-	add_compile_options(-Wpedantic)
-	add_compile_options(-Wmissing-prototypes)
-	add_compile_options(-Wredundant-decls)
-	add_compile_options(-Wshadow)
-	add_compile_options(-Wpointer-arith)
-	add_compile_options(-O3)
-
-elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-	# Warning C4146 is raised when a unary minus operator is applied to an
-	# unsigned type; this has nonetheless been standard and portable for as
-	# long as there has been a C standard, and we need it for constant-time
-	# computations. Thus, we disable that spurious warning.
-	add_compile_options(/wd4146)
-endif()
-
-
-# First, do libraries:
-add_library(kyber_fips_ref OBJECT ${KECCAK_FILES} ${AES_FILES})
-set(_REF_OBJS $<TARGET_OBJECTS:kyber_fips_ref>)
-
-# Iterate over parameter sets:
-foreach(X RANGE 2 4)
-   # Plain Kyber
-   add_library(kyber${X}lib_ref OBJECT ${SRCS} symmetric-shake.c)
-   target_compile_options(kyber${X}lib_ref PUBLIC -DKYBER_K=${X})
-   set(_REF_OBJS ${_REF_OBJS} $<TARGET_OBJECTS:kyber${X}lib_ref>)
-
-   # Plain test
-   add_executable(test_kyber${K${X}}_ref ${TEST_SRCS})
-   target_link_libraries(test_kyber${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_kyber${K${X}}_ref test_kyber${K${X}}_ref)
-
-   # Plain KEX
-   add_executable(test_kex${K${X}}_ref ${TESTKEX_SRCS})
-   target_link_libraries(test_kex${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_kex${K${{X}}_ref test_kex${K${X}}_ref)
-
-	 # Plain KEM QROM
-   add_executable(test_kem_qrom${K${X}}_ref ${SRCS_QROM})
-   target_link_libraries(test_kem_qrom${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain KEX QROM
-   add_executable(test_kex_qrom${K${X}}_ref ${KEX_QROM_SRCS})
-   target_link_libraries(test_kex_qrom${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_kex${K${{X}}_ref test_kex${K${X}}_ref)
-
-	 # Plain IND-CCA PKE
-   add_executable(test_indcca${K${X}}_ref ${CCA_FILES})
-   target_link_libraries(test_indcca${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain COMMITMENT QROM
-   add_executable(test_commitment_qrom${K${X}}_ref ${COMMITMENT_QROM_FILES})
-   target_link_libraries(test_commitment_qrom${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain KEM DET
-	 add_executable(test_kem_det${K${X}}_ref ${KEM_DET_FILES})
-	 target_link_libraries(test_kem_det${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain Commitment DET
-	 add_executable(test_commitment${K${X}}_ref ${COMMITMENT_FILES})
-	 target_link_libraries(test_commitment${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain GAKE
-   add_executable(test_gake_qrom${K${X}}_ref ${GAKE_QROM_FILES})
-   target_link_libraries(test_gake_qrom${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain GAKE QROM
-   add_executable(test_gake${K${X}}_ref ${GAKE_FILES})
-   target_link_libraries(test_gake${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain IND-CCA QROM PKE
-   add_executable(test_indcca_qrom${K${X}}_ref ${CCA_QROM_FILES})
-   target_link_libraries(test_indcca_qrom${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain GAKE 3
-   add_executable(test_gake3-${K${X}}_ref ${GAKE3_FILES})
-   target_link_libraries(test_gake3-${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain GAKE speed
-   add_executable(test_gake_speed${K${X}}_ref ${GAKE_SPEED_FILES})
-   target_link_libraries(test_gake_speed${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-	 # Plain GAKE QROM speed
-	 add_executable(test_gake_qrom_speed${K${X}}_ref ${GAKE_QROM_SPEED_FILES})
-	 target_link_libraries(test_gake_qrom_speed${K${X}}_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-
-   # Plain speed
-   if(NOT WIN32)
-   # Plain speed - not yet supported in Windows: TBD
-   add_executable(test_speed${K${X}}_ref ${SPEED_SRCS})
-   target_compile_options(test_speed${K${X}}_ref PUBLIC -DKYBER_K=${X})
-   target_link_libraries(test_speed${K${X}}_ref kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_speed${K${X}}_ref test_speed${K${X}}_ref)
-   endif()
-
-   # Plain test vectors
-   add_executable(test_vectors${K${X}}_ref ${VECTOR_SRCS})
-   target_compile_options(test_vectors${K${X}}_ref PUBLIC -DKYBER_K=${X})
-   target_link_libraries(test_vectors${K${X}}_ref PRIVATE kyber ${OPENSSL_CRYPTO_LIBRARY})
-   if (WIN32)
-      add_test(NAME test_vectors${X}_ref COMMAND ${CMAKE_COMMAND} -E chdir $<TARGET_FILE_DIR:test_vectors${K${X}}_ref> $ENV{ComSpec} /c "$<TARGET_FILE_NAME:test_vectors${K${X}}_ref> | dos2unix > ../tvecs${K${X}}")
-   else()
-      add_test(NAME test_vectors${K${X}}_ref COMMAND sh -c "$<TARGET_FILE:test_vectors${K${X}}_ref> > tvecs${K${X}}")
-   endif()
-
-   # AES Kyber ('90s')
-   add_library(kyber${X}aeslib_ref OBJECT ${SRCS} symmetric-aes.c)
-   target_compile_options(kyber${X}aeslib_ref PUBLIC -DKYBER_K=${X} -DKYBER_90S)
-   set(_REF_OBJS ${_REF_OBJS} $<TARGET_OBJECTS:kyber${X}aeslib_ref>)
-
-   # AES test
-   add_executable(test_kyber${K${X}}-90s_ref ${TEST_SRCS})
-   target_link_libraries(test_kyber${K${X}}-90s_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_kyber${K${X}}-90s_ref test_kyber${K${X}}-90s_ref)
-
-   # AES KEX
-   add_executable(test_kex${K${X}}-90s_ref ${TESTKEX_SRCS})
-   target_link_libraries(test_kex${K${X}}-90s_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_kex${K${{X}}-90s_ref test_kex${K${X}}-90s_ref)
-
-	 # GAKE
-	 add_executable(test_gake${K${X}}-90s_ref ${GAKE_FILES})
-   target_link_libraries(test_gake${K${X}}-90s_ref PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-   # AES speed
-   if(NOT WIN32)
-   # AES speed - not yet supported in Windows: TBD
-   add_executable(test_speed${K${X}}-90s_ref ${SPEED_SRCS})
-   target_compile_options(test_speed${K${X}}-90s_ref PUBLIC -DKYBER_K=${X} -DKYBER_90S)
-   target_link_libraries(test_speed${K${X}}-90s_ref kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_speed${K${X}}-90s_ref test_speed${K${X}}-90s_ref)
-   endif()
-
-   # AES test vectors
-   add_executable(test_vectors${K${X}}-90s_ref ${VECTOR_SRCS})
-   target_compile_options(test_vectors${K${X}}-90s_ref PUBLIC -DKYBER_K=${X} -DKYBER_90S)
-   target_link_libraries(test_vectors${K${X}}-90s_ref PRIVATE kyber ${OPENSSL_CRYPTO_LIBRARY})
-   if (WIN32)
-      add_test(NAME test_vectors${X}-90s_ref COMMAND ${CMAKE_COMMAND} -E chdir $<TARGET_FILE_DIR:test_vectors${K${X}}-90s_ref> $ENV{ComSpec} /c "$<TARGET_FILE_NAME:test_vectors${K${X}}-90s_ref> | dos2unix > ../tvecs${K${X}}-90s")
-   else()
-      add_test(NAME test_vectors${K${X}}-90s_ref COMMAND sh -c "$<TARGET_FILE:test_vectors${K${X}}-90s_ref> > tvecs${K${X}}-90s")
-   endif()
-
-endforeach()
-
-# Plain AES 256 GCM
-add_executable(test_aes256gcm ${GCM_FILES})
-target_link_libraries(test_aes256gcm PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-
-# PQCKATs
-add_executable(PQCgenKAT_kem_ref ${PQCKAT_SRCS})
-target_compile_options(PQCgenKAT_kem_ref PUBLIC)
-target_link_libraries(PQCgenKAT_kem_ref PRIVATE kyber ${OPENSSL_CRYPTO_LIBRARY})
-if (WIN32)
-      # Necessary cludge to make hashes be ignorant of Windows CRLF file formatting:
-      add_test(NAME PQCgenKAT_kem_ref COMMAND ${CMAKE_COMMAND} -E chdir $<TARGET_FILE_DIR:PQCgenKAT_kem_ref> $ENV{ComSpec} /c "$<TARGET_FILE_NAME:PQCgenKAT_kem_ref> && dos2unix -n PQCsignKAT_KEM.rsp ../PQCsignKAT_KEM.rsp && dos2unix -n PQCsignKAT_KEM.req ../PQCsignKAT_KEM.req")
+if(MSVC)
+  add_compile_options(/nologo /O2 /W4 /WX /wd4146)
 else()
-      add_test(PQCgenKAT_kem_ref PQCgenKAT_kem_ref)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+  add_compile_options(-Wmissing-prototypes -Wredundant-decls -Wshadow -Wpointer-arith)
+  add_compile_options(-O2 -fwrapv)
 endif()
 
-add_test(Hashes_test_ref sha256sum -c ../../SHA256SUMS)
+add_library(fips202_ref ${FIPS202_SRCS})
+add_library(aes256ctr_ref ${AES256CTR_SRCS})
+add_library(sha2_ref ${SHA2_SRCS})
 
-set(REF_OBJS ${_REF_OBJS} PARENT_SCOPE)
+# Kyber 512
+add_library(kyber512_ref ${KYBER_FIPS202_SRCS})
+target_compile_definitions(kyber512_ref PUBLIC KYBER_K=2)
+target_link_libraries(kyber512_ref INTERFACE fips202_ref)
+
+add_library(kyber_qrom512_ref ${KYBER_QROM_FIPS202_SRCS})
+target_compile_definitions(kyber_qrom512_ref PUBLIC KYBER_K=2)
+target_link_libraries(kyber_qrom512_ref INTERFACE fips202_ref)
+
+add_executable(test_kyber512_ref ${TEST_KYBER_SRCS})
+add_executable(test_kex512_ref ${TEST_KEX_SRCS})
+add_executable(test_vectors512_ref ${TEST_VECTORS_SRCS})
+add_executable(test_gake512_ref ${TEST_GAKE_SRCS})
+add_executable(test_gake_qrom512_ref ${TEST_GAKE_QROM_SRCS})
+add_executable(test_gake_speed512_ref ${TEST_SPEED_GAKE_SRCS})
+add_executable(test_gake_qrom_speed512_ref ${TEST_SPEED_GAKE_QROM_SRCS})
+
+target_link_libraries(test_kyber512_ref kyber512_ref)
+target_link_libraries(test_kex512_ref kyber512_ref)
+target_link_libraries(test_vectors512_ref kyber512_ref)
+target_link_libraries(test_gake512_ref kyber512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom512_ref kyber_qrom512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_speed512_ref kyber512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom_speed512_ref kyber_qrom512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+# Kyber 768
+add_library(kyber768_ref ${KYBER_FIPS202_SRCS})
+target_compile_definitions(kyber768_ref PUBLIC KYBER_K=3)
+target_link_libraries(kyber768_ref INTERFACE fips202_ref)
+
+add_library(kyber_qrom768_ref ${KYBER_QROM_FIPS202_SRCS})
+target_compile_definitions(kyber_qrom768_ref PUBLIC KYBER_K=3)
+target_link_libraries(kyber_qrom768_ref INTERFACE fips202_ref)
+
+add_executable(test_kyber768_ref ${TEST_KYBER_SRCS})
+add_executable(test_kex768_ref ${TEST_KEX_SRCS})
+add_executable(test_vectors768_ref ${TEST_VECTORS_SRCS})
+add_executable(test_gake768_ref ${TEST_GAKE_SRCS})
+add_executable(test_gake_qrom768_ref ${TEST_GAKE_QROM_SRCS})
+add_executable(test_gake_speed768_ref ${TEST_SPEED_GAKE_SRCS})
+add_executable(test_gake_qrom_speed768_ref ${TEST_SPEED_GAKE_QROM_SRCS})
+target_link_libraries(test_kyber768_ref kyber768_ref)
+target_link_libraries(test_kex768_ref kyber768_ref)
+target_link_libraries(test_vectors768_ref kyber768_ref)
+target_link_libraries(test_gake768_ref kyber768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom768_ref kyber_qrom768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_speed768_ref kyber768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom_speed768_ref kyber_qrom768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+
+# Kyber 1024
+add_library(kyber1024_ref ${KYBER_FIPS202_SRCS})
+target_compile_definitions(kyber1024_ref PUBLIC KYBER_K=4)
+target_link_libraries(kyber1024_ref INTERFACE fips202_ref)
+
+add_library(kyber_qrom1024_ref ${KYBER_QROM_FIPS202_SRCS})
+target_compile_definitions(kyber_qrom1024_ref PUBLIC KYBER_K=4)
+target_link_libraries(kyber_qrom1024_ref INTERFACE fips202_ref)
+
+add_executable(test_kyber1024_ref ${TEST_KYBER_SRCS})
+add_executable(test_kex1024_ref ${TEST_KEX_SRCS})
+add_executable(test_vectors1024_ref ${TEST_VECTORS_SRCS})
+add_executable(test_gake1024_ref ${TEST_GAKE_SRCS})
+add_executable(test_gake_qrom1024_ref ${TEST_GAKE_QROM_SRCS})
+add_executable(test_gake_speed_qrom1024_ref ${TEST_GAKE_QROM_SRCS})
+add_executable(test_gake_speed1024_ref ${TEST_SPEED_GAKE_SRCS})
+add_executable(test_gake_qrom_speed1024_ref ${TEST_SPEED_GAKE_QROM_SRCS})
+target_link_libraries(test_kyber1024_ref kyber1024_ref)
+target_link_libraries(test_kex1024_ref kyber1024_ref)
+target_link_libraries(test_vectors1024_ref kyber1024_ref)
+target_link_libraries(test_gake1024_ref kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_speed_qrom1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_speed1024_ref kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom_speed1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
