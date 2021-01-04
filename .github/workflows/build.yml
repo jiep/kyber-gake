@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: sudo apt-get install cmake ninja-build openssl
+      run: sudo apt-get install cmake make openssl
 
     - name: Compile and build binaries
       run: bash ./build.sh

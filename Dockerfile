@@ -1,17 +1,22 @@
-FROM ubuntu:20.04
+FROM ubuntu:20.04 AS builder
 
 RUN apt update && \
   apt upgrade -y && \
-  apt install -y cmake ninja-build libssl-dev inotify-tools
+  apt install -y cmake libssl-dev
 
-WORKDIR /kyber
+WORKDIR /build
 
-COPY monitor-and-compile.sh .
+COPY . .
 
-# RUN mkdir build && \
-#   cd build && \
-#   cmake -GNinja -DCMAKE_BUILD_TYPE=Release .. && \
-#   ninja && ninja test
+RUN mkdir build && \
+  cd build && \
+  cmake -DCMAKE_BUILD_TYPE=Release .. && \
+  make
 
-CMD ["bash", "monitor-and-compile.sh"]
-# CMD ["/kyber/build/avx2/test_speed512-90s_avx2"]
+FROM ubuntu:20.04
+
+WORKDIR /kyber-gake
+
+RUN mkdir -p avx2 ref
+COPY --from=builder /build/build/avx2/test_gake* ./avx2/
+COPY --from=builder /build/build/ref/test_gake* ./ref/

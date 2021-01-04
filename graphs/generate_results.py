@@ -99,7 +99,7 @@ def main():
     results_file = open("{}/results.csv".format(config["OUTPUT_FOLDER"]), "w", buffering=1)
     results_speed_file = open("{}/results_speed.csv".format(config["OUTPUT_FOLDER"]), "w", buffering=1)
     results_file.write("implementation,security,parties,type,time_init,time_round12,time_round3,time_round4,time_total,percentage_init,percentage_round12,percentage_round3,percentage_round4,percentage_total\n")
-    results_speed_file.write("implementation,security,parties,type,time_commit,time_check,time_init,time_der_resp,time_der_init,time_keygen,time_encaps,time_decaps\n")
+    results_speed_file.write("implementation,security,type,time_commit,time_check,time_init,time_der_resp,time_der_init,time_keygen,time_encaps,time_decaps\n")
     for implementation in IMPLEMENTATIONS:
         for (i, security) in enumerate(SECURITY):
             for (j, parties) in enumerate(reversed(config["NUM_PARTIES"])):
@@ -119,7 +119,7 @@ def main():
                         output_speed = subprocess.Popen(bin_speed, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
 
                         results_file.write("{},{},{},{},{}\n".format(implementation, security, parties, type, ",".join(parse(output))))
-                        results_speed_file.write("{},{},{},{},{}\n".format(implementation, security, parties, type, ",".join(parse_speed(output_speed, type))))
+                        results_speed_file.write("{},{},{},{}\n".format(implementation, security, type, ",".join(parse_speed(output_speed, type))))
 
     results_file.close()
     results_speed_file.close()
