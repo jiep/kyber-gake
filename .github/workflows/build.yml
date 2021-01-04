@@ -1,0 +1,112 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+      - gake
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Set up Git repository
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: sudo apt-get install cmake make openssl
+
+    - name: Compile and build binaries
+      run: bash ./build.sh
+
+    - name: Archive binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: binaries
+        path: |
+          ./build/ref/test_gake*
+          ./build/avx2/test_gake*
+        retention-days: 7
+        if-no-files-found: error
+
+  tests:
+    runs-on: self-hosted
+    needs: build
+    timeout-minutes: 0
+    steps:
+
+    - name: Set up Git repository
+      uses: actions/checkout@v2
+
+    - name: Download dependencies
+      run: sudo apt-get install python3 virtualenv
+
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v2
+
+    - name: Run tests
+      run: |
+        mkdir -p results
+        mv binaries build
+        chmod +x build/ref/*
+        chmod +x build/avx2/*
+        virtualenv --python=python3 venv
+        source venv/bin/activate
+        pip install -r graphs/requirements.txt
+        python graphs/generate_results.py graphs/config.yaml
+        python graphs/generate_graphics.py graphs/config.yaml
+
+    - name: Archive results
+      uses: actions/upload-artifact@v2
+      with:
+        name: results
+        path: ./results/*
+        retention-days: 7
+
+  release:
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+    - name: Set up Git repository
+      uses: actions/checkout@v2
+
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v2
+
+    - name: Set release name
+      id: version
+      run: |
+        DATE=$(date +'%Y%m%d%H%M%S')
+        HASH=$(echo -e ${GITHUB_SHA} | cut -c1-8)
+        EVENT=${GITHUB_EVENT_NAME}
+        if [ "$EVENT" = "pull_request" ]; then
+            BRANCH=${GITHUB_HEAD_REF}
+        else
+            BRANCH=${GITHUB_REF##*/}
+        fi
+        if [ "$BRANCH" = "master" ]; then
+            VERSION="$DATE.$HASH"
+        else
+            VERSION="$DATE.$HASH.$BRANCH"
+        fi
+        echo "Version: $VERSION"
+        echo "::set-output name=version::$(echo v.$VERSION)"
+
+    - name: Upload artifacts
+      run: |
+        mv binaries GAKE
+        zip -r GAKE.zip GAKE
+        zip -r results.zip results
+        set -x
+        assets=()
+        for asset in "GAKE.zip" results.zip; do
+          assets+=("-a" "$asset")
+        done
+        hub release create "${assets[@]}" -m "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

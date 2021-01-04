@@ -1,16 +1,22 @@
-FROM ubuntu:20.04
+FROM ubuntu:20.04 AS builder
 
 RUN apt update && \
   apt upgrade -y && \
-  apt install -y cmake ninja-build libssl-dev
+  apt install -y cmake libssl-dev
 
-WORKDIR /kyber
+WORKDIR /build
 
 COPY . .
 
-RUN mkdir build-ninja && \
-  cd build-ninja && \
-  cmake -DBUILD_SHARED_LIBS=ON -GNinja .. && \
-  ninja && ninja test
+RUN mkdir build && \
+  cd build && \
+  cmake -DCMAKE_BUILD_TYPE=Release .. && \
+  make
 
-ENTRYPOINT ["/kyber/build-ninja/avx2/test_speed512-90s_avx2"]
+FROM ubuntu:20.04
+
+WORKDIR /kyber-gake
+
+RUN mkdir -p avx2 ref
+COPY --from=builder /build/build/avx2/test_gake* ./avx2/
+COPY --from=builder /build/build/ref/test_gake* ./ref/

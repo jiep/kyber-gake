@@ -1,4 +1,6 @@
 set(SRCS kem.c indcpa.c polyvec.c poly.c fq.S shuffle.S ntt.S invntt.S basemul.S consts.c rejsample.c cbd.c verify.c)
+set(SRCS_QROM kem_qrom.c indcpa.c polyvec.c poly.c fq.S shuffle.S ntt.S invntt.S basemul.S consts.c rejsample.c utils.c randombytes.c cbd.c verify.c)
+set(TEST_QROM ${SRCS_QROM} test_kem_qrom.c)
 set(TEST_SRCS test_kyber.c randombytes.c)
 set(TESTKEX_SRCS test_kex.c randombytes.c kex.c)
 set(SPEED_SRCS test_speed.c speed_print.c cpucycles.c randombytes.c kex.c)
@@ -7,6 +9,23 @@ set(PQCKAT_SRCS PQCgenKAT_kem.c rng.c)
 set(AES_FILES aes256ctr.c)
 set(KECCAK_FILES fips202x4.c keccak4x/KeccakP-1600-times4-SIMD256.c)
 set(AES_SRCS ${SRCS} symmetric-aes.c)
+set(GCM_FILES aes256gcm.c randombytes.c utils.c test_aes256gcm.c)
+set(KEM_DET_FILES ${SRCS} kem_det.c randombytes.c utils.c test_kem_det.c)
+set(CCA_FILES ${SRCS} indcca.c kem_det.c aes256gcm.c randombytes.c utils.c test_indcca.c)
+set(COMMITMENT_FILES ${SRCS} kem_det.c indcca.c commitment.c aes256gcm.c randombytes.c utils.c test_commitment.c)
+set(GAKE_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake.c)
+set(GAKE_SPEED_FILES ${SRCS} gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c test_gake_speed.c)
+set(CCA_QROM_FILES ${SRCS_QROM} indcca_qrom.c kem_qrom.c aes256gcm.c randombytes.c utils.c test_indcca_qrom.c)
+set(COMMITMENT_QROM_FILES ${SRCS_QROM} commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c randombytes.c utils.c test_commitment_qrom.c)
+set(KEX_QROM_SRCS ${SRCS_QROM} utils.c indcpa.c kex_qrom.c randombytes.c test_kex_qrom.c)
+set(GAKE_QROM_FILES ${SRCS_QROM} kem.c gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom.c)
+set(GAKE_QROM_SPEED_FILES ${SRCS_QROM} kem.c gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom_speed.c)
+
+set(KYBER_FIPS202_SRCS ${KYBER_SRCS} symmetric-shake.c)
+set(KYBER_QROM_FIPS202_SRCS ${KYBER_QROM_SRCS} symmetric-shake.c)
+set(FIPS202_SRCS fips202.c fips202x4.c keccak4x/KeccakP-1600-times4-SIMD256.c)
+set(AES256CTR_SRCS aes256ctr.c)
+set(SHA2_SRCS sha256.c sha512.c)
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 	add_compile_options(-O3)
@@ -48,97 +67,78 @@ elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
 	add_compile_options(/wd4146)
 endif()
 
+add_library(fips202_avx2 ${FIPS202_SRCS})
+add_library(aes256ctr_avx2 ${AES256CTR_SRCS})
 
-# First, do libraries:
-add_library(kyber_fips_avx2 OBJECT ${KECCAK_FILES} ${AES_FILES})
-set(_AVX2_OBJS $<TARGET_OBJECTS:kyber_fips_avx2>)
+# Kyber 512
+add_library(kyber512_avx2 ${KYBER_FIPS202_SRCS})
+target_compile_definitions(kyber512_avx2 PUBLIC KYBER_K=2)
+target_link_libraries(kyber512_avx2 INTERFACE fips202_avx2)
 
-# Iterate over parameter sets:
-foreach(X RANGE 2 4)
-   # Plain Kyber
-   add_library(kyber${X}lib_avx2 OBJECT ${SRCS} symmetric-shake.c)
-   target_compile_options(kyber${X}lib_avx2 PUBLIC -DKYBER_K=${X})
-   target_include_directories(kyber${X}lib_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
-   set(_AVX2_OBJS ${_AVX2_OBJS} $<TARGET_OBJECTS:kyber${X}lib_avx2>)
+add_library(kyber_qrom512_avx2 ${KYBER_QROM_FIPS202_SRCS})
+target_compile_definitions(kyber_qrom512_avx2 PUBLIC KYBER_K=2)
+target_link_libraries(kyber_qrom512_avx2 INTERFACE fips202_avx2)
 
-   # Plain test
-   add_executable(test_kyber${K${X}}_avx2 ${TEST_SRCS})
-   target_link_libraries(test_kyber${K${X}}_avx2 PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_kyber${K${X}}_avx2 test_kyber${K${X}}_avx2)
+add_executable(test_gake512_avx2 ${GAKE_FILES})
+add_executable(test_gake_qrom512_avx2 ${GAKE_QROM_FILES})
+add_executable(test_gake_speed512_avx2 ${GAKE_SPEED_FILES})
+add_executable(test_gake_qrom_speed512_avx2 ${GAKE_QROM_SPEED_FILES})
 
-   # Plain KEX
-   add_executable(test_kex${K${X}}_avx2 ${TESTKEX_SRCS})
-   target_link_libraries(test_kex${K${X}}_avx2 PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_kex${K${{X}}_avx2 test_kex${K${X}}_avx2)
+target_include_directories(test_gake512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_qrom512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_speed512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_qrom_speed512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 
-   # Plain speed
-   if(NOT WIN32)
-   # Plain speed - not yet supported in Windows: TBD
-   add_executable(test_speed${K${X}}_avx2 ${SPEED_SRCS})
-   target_compile_options(test_speed${K${X}}_avx2 PUBLIC -DKYBER_K=${X})
-   target_link_libraries(test_speed${K${X}}_avx2 kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_speed${K${X}}_avx2 test_speed${K${X}}_avx2)
-   endif()
+target_link_libraries(test_gake512_avx2 kyber512_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom512_avx2 kyber_qrom512_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_speed512_avx2 kyber512_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom_speed512_avx2 kyber_qrom512_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 
-   # Plain test vectors
-   add_executable(test_vectors${K${X}}_avx2 ${VECTOR_SRCS})
-   target_compile_options(test_vectors${K${X}}_avx2 PUBLIC -DKYBER_K=${X})
-   target_link_libraries(test_vectors${K${X}}_avx2 PRIVATE kyber ${OPENSSL_CRYPTO_LIBRARY})
-   if (WIN32) 
-      add_test(NAME test_vectors${X}_avx2 COMMAND ${CMAKE_COMMAND} -E chdir $<TARGET_FILE_DIR:test_vectors${K${X}}_avx2> $ENV{ComSpec} /c "$<TARGET_FILE_NAME:test_vectors${K${X}}_avx2> | dos2unix > ../tvecs${K${X}}")
-   else()
-      add_test(NAME test_vectors${K${X}}_avx2 COMMAND sh -c "$<TARGET_FILE:test_vectors${K${X}}_avx2> > tvecs${K${X}}")
-   endif()
+# Kyber 768
+add_library(kyber768_avx2 ${KYBER_FIPS202_SRCS})
+target_compile_definitions(kyber768_avx2 PUBLIC KYBER_K=3)
+target_link_libraries(kyber768_avx2 INTERFACE fips202_avx2)
 
-   # AES Kyber ('90s')
-   add_library(kyber${X}aeslib_avx2 OBJECT ${SRCS})
-   target_include_directories(kyber${X}aeslib_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
-   target_compile_options(kyber${X}aeslib_avx2 PUBLIC -DKYBER_K=${X} -DKYBER_90S)
-   set(_AVX2_OBJS ${_AVX2_OBJS} $<TARGET_OBJECTS:kyber${X}aeslib_avx2>)
+add_library(kyber_qrom768_avx2 ${KYBER_QROM_FIPS202_SRCS})
+target_compile_definitions(kyber_qrom768_avx2 PUBLIC KYBER_K=3)
+target_link_libraries(kyber_qrom768_avx2 INTERFACE fips202_avx2)
 
-   # AES test
-   add_executable(test_kyber${K${X}}-90s_avx2 ${TEST_SRCS})
-   target_link_libraries(test_kyber${K${X}}-90s_avx2 PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_kyber${K${X}}-90s_avx2 test_kyber${K${X}}-90s_avx2)
+add_executable(test_gake768_avx2 ${GAKE_FILES})
+add_executable(test_gake_qrom768_avx2 ${GAKE_QROM_FILES})
+add_executable(test_gake_speed768_avx2 ${GAKE_SPEED_FILES})
+add_executable(test_gake_qrom_speed768_avx2 ${GAKE_QROM_SPEED_FILES})
 
-   # AES KEX
-   add_executable(test_kex${K${X}}-90s_avx2 ${TESTKEX_SRCS})
-   target_link_libraries(test_kex${K${X}}-90s_avx2 PUBLIC kyber ${OPENSSL_CRYPTO_LIBRARY} )
-   #add_test(test_kex${K${{X}}-90s_avx2 test_kex${K${X}}-90s_avx2)
+target_include_directories(test_gake768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_qrom768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_speed768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_qrom_speed768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 
-   # AES speed
-   if(NOT WIN32)
-   # Plain speed - not yet supported in Windows: TBD
-   add_executable(test_speed${K${X}}-90s_avx2 ${SPEED_SRCS})
-   target_compile_options(test_speed${K${X}}-90s_avx2 PUBLIC -DKYBER_K=${X} -DKYBER_90S)
-   target_link_libraries(test_speed${K${X}}-90s_avx2 kyber ${OPENSSL_CRYPTO_LIBRARY})
-   #add_test(test_speed${K${X}}-90s_avx2 test_speed${K${X}}-90s_avx2)
-   endif()
+target_link_libraries(test_gake768_avx2 kyber768_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom768_avx2 kyber_qrom768_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_speed768_avx2 kyber768_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom_speed768_avx2 kyber_qrom768_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 
-   # AES test vectors
-   add_executable(test_vectors${K${X}}-90s_avx2 ${VECTOR_SRCS})
-   target_compile_options(test_vectors${K${X}}-90s_avx2 PUBLIC -DKYBER_K=${X} -DKYBER_90S)
-   target_link_libraries(test_vectors${K${X}}-90s_avx2 PRIVATE kyber ${OPENSSL_CRYPTO_LIBRARY})
-   if (WIN32) 
-      add_test(NAME test_vectors${X}-90s_avx2 COMMAND ${CMAKE_COMMAND} -E chdir $<TARGET_FILE_DIR:test_vectors${K${X}}-90s_avx2> $ENV{ComSpec} /c "$<TARGET_FILE_NAME:test_vectors${K${X}}-90s_avx2> | dos2unix > ../tvecs${K${X}}-90s")
-   else()
-      add_test(NAME test_vectors${K${X}}-90s_avx2 COMMAND sh -c "$<TARGET_FILE:test_vectors${K${X}}-90s_avx2> > tvecs${K${X}}-90s")
-   endif()
 
-endforeach()
+# Kyber 1024
+add_library(kyber1024_avx2 ${KYBER_FIPS202_SRCS})
+target_compile_definitions(kyber1024_avx2 PUBLIC KYBER_K=4)
+target_link_libraries(kyber1024_avx2 INTERFACE fips202_avx2)
 
-# PQCKATs
-add_executable(PQCgenKAT_kem_avx2 ${PQCKAT_SRCS})
-target_compile_options(PQCgenKAT_kem_avx2 PUBLIC)
-target_link_libraries(PQCgenKAT_kem_avx2 PRIVATE kyber ${OPENSSL_CRYPTO_LIBRARY})
-if (WIN32) 
-      # Necessary cludge to make hashes be ignorant of Windows CRLF file formatting:
-      add_test(NAME PQCgenKAT_kem_avx2 COMMAND ${CMAKE_COMMAND} -E chdir $<TARGET_FILE_DIR:PQCgenKAT_kem_avx2> $ENV{ComSpec} /c "$<TARGET_FILE_NAME:PQCgenKAT_kem_avx2> && dos2unix -n PQCsignKAT_KEM.rsp ../PQCsignKAT_KEM.rsp && dos2unix -n PQCsignKAT_KEM.req ../PQCsignKAT_KEM.req")
-else()
-      add_test(PQCgenKAT_kem_avx2 PQCgenKAT_kem_avx2)
-endif()
+add_library(kyber_qrom1024_avx2 ${KYBER_QROM_FIPS202_SRCS})
+target_compile_definitions(kyber_qrom1024_avx2 PUBLIC KYBER_K=4)
+target_link_libraries(kyber_qrom1024_avx2 INTERFACE fips202_avx2)
 
-add_test(Hashes_test_avx2 sha256sum -c ../../SHA256SUMS)
+add_executable(test_gake1024_avx2 ${GAKE_FILES})
+add_executable(test_gake_qrom1024_avx2 ${GAKE_QROM_FILES})
+add_executable(test_gake_speed1024_avx2 ${GAKE_SPEED_FILES})
+add_executable(test_gake_qrom_speed1024_avx2 ${GAKE_QROM_SPEED_FILES})
 
-set(AVX2_OBJS ${_AVX2_OBJS} PARENT_SCOPE)
+target_include_directories(test_gake1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_qrom1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_speed1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(test_gake_qrom_speed1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 
+target_link_libraries(test_gake1024_avx2 kyber1024_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom1024_avx2 kyber_qrom1024_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_speed1024_avx2 kyber1024_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(test_gake_qrom_speed1024_avx2 kyber_qrom1024_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
