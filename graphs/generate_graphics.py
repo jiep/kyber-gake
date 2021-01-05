@@ -113,7 +113,7 @@ def plot_speed_2_ake(data, config):
     fig.subplots_adjust(hspace=0.5, wspace=0.5)
 
     commitment_vars = ['time_init', 'time_der_resp', 'time_der_init']
-    commitment_vars_names = ['Init time', 'Der_rep time', 'Der_init time']
+    commitment_vars_names = ['Init time', 'Der_resp time', 'Der_init time']
     for (i, var) in enumerate(commitment_vars):
         for (j, impl) in enumerate(IMPLEMENTATIONS):
             df = data[data['implementation'] == impl]
