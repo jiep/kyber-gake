@@ -129,6 +129,7 @@ int main(){
     bzero(pt, MESSAGE_LENGTH);
     char plaintext[MESSAGE_LENGTH];
 
+    bzero(plaintext, MESSAGE_LENGTH);
     bzero(message, MESSAGE_LENGTH);
 
     if (b == 1) {
