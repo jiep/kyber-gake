@@ -98,6 +98,7 @@ void decrypt(uint8_t* message, uint8_t* k, char* m) {
   unsigned char ct[MESSAGE_LENGTH];
   unsigned char plaintext[MESSAGE_LENGTH];
   int ct_len;
+
   unset_message(message, iv, tag, ct, &ct_len);
 
   unsigned char* aad = (unsigned char *) "";

@@ -129,6 +129,7 @@ int main(){
     }
 
     printf("[C] pt: %s\n", pt);
+    bzero(pt, MESSAGE_LENGTH);
   }
 
   free(data);

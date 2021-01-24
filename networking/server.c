@@ -126,6 +126,7 @@ int main(){
       }
     }
 
+    bzero(pt, MESSAGE_LENGTH);
     char plaintext[MESSAGE_LENGTH];
 
     bzero(message, MESSAGE_LENGTH);
@@ -146,6 +147,7 @@ int main(){
     // }
 
     printf("[C]: %s\n", plaintext);
+    bzero(plaintext, MESSAGE_LENGTH);
   }
 
   free(data);
