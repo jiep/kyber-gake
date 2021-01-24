@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - gake
+      - networking
   pull_request:
     branches: [ master ]
 
