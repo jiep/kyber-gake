@@ -99,8 +99,8 @@ int main(){
     bzero(plaintext, MESSAGE_LENGTH);
 
     if (b == 1) {
-      printf("[C] ");
-      read(0, plaintext, MESSAGE_LENGTH);
+      printf("[C] Enter the message you want to send to the server: ");
+      scanf("%[^\n]%*c", plaintext);
     } else {
       memcpy(plaintext, TEST_MESSAGE, sizeof(TEST_MESSAGE));
       printf("[C] plaintext: %s", plaintext);

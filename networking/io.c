@@ -88,7 +88,7 @@ void encrypt(char* m, uint8_t* k, uint8_t* message) {
   unsigned char tag[AES_256_GCM_TAG_LENGTH];
   bzero(ct, MESSAGE_LENGTH);
   randombytes(iv, AES_256_IVEC_LENGTH);
-  int ct_len = gcm_encrypt(m, sizeof(m), aad, aad_len, k, iv, ct, tag);
+  int ct_len = gcm_encrypt(m, strlen(m), aad, aad_len, k, iv, ct, tag);
   set_message(iv, tag, ct, ct_len, message);
 }
 

@@ -131,7 +131,8 @@ int main(){
     bzero(message, MESSAGE_LENGTH);
 
     if (b == 1) {
-      read(0, plaintext, MESSAGE_LENGTH);
+      printf("[S] Enter the message you want to send to the client: ");
+      scanf("%[^\n]%*c", plaintext);
     } else {
       memcpy(plaintext, TEST_MESSAGE, sizeof(TEST_MESSAGE));
     }
