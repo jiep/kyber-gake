@@ -1,27 +1,27 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<unistd.h>
-#include<string.h>
-#include<sys/socket.h>
-#include<netdb.h>
-#include<arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 
 #include "../ref/gake.h"
 #include "io.h"
-
-// Maximum number of data that can transfer
-#define MESSAGE_LENGTH 1024
-#define PORT 8888
-#define ADDRESS "10.0.2.15"
-#define SA struct sockaddr
-#define TEST_MESSAGE "hello"
+#include "common.h"
 
 // Global Data
 int socket_file_descriptor, connection;
 struct sockaddr_in serveraddress, client;
 char message[1024];
 
-int main(){
+int main(int argc, char *argv[]){
+
+  if (argc != 4) {
+    printf("Usage: client <private key file> <ca keys file> <server ip>\n");
+    exit(1);
+  }
+
   socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
   if(socket_file_descriptor == -1){
     printf("Creation of Socket failed.!\n");
@@ -29,7 +29,7 @@ int main(){
   }
 
   bzero(&serveraddress, sizeof(serveraddress));
-  serveraddress.sin_addr.s_addr = inet_addr(ADDRESS);
+  serveraddress.sin_addr.s_addr = inet_addr(argv[3]);
   serveraddress.sin_port = htons(PORT);
   serveraddress.sin_family = AF_INET;
 
@@ -51,13 +51,13 @@ int main(){
 
   unsigned char ka[KEX_SSBYTES];
 
-  read_keys("192.168.68.111.bin", &keys);
-  // printf("pk (c): ");
-  // print_short_key(keys.public_key, CRYPTO_PUBLICKEYBYTES, 10);
-  // printf("sk (c): ");
-  // print_short_key(keys.secret_key, CRYPTO_SECRETKEYBYTES, 10);
+  read_keys(argv[1], &keys);
+  printf("pk (c): ");
+  print_short_key(keys.public_key, CRYPTO_PUBLICKEYBYTES, 10);
+  printf("sk (c): ");
+  print_short_key(keys.secret_key, CRYPTO_SECRETKEYBYTES, 10);
 
-  read_ca_data("ca.bin", 2, data);
+  read_ca_data(argv[2], 2, data);
 
   // for (int i = 0; i < 2; i++) {
   //   printf("[%d] ", i);
@@ -66,11 +66,12 @@ int main(){
   //   printf("---------------\n");
   // }
 
-  char ip_str[17] = "10.0.2.15";
+  char ip_str[17];
+  memcpy(ip_str, argv[3], 17);
   get_pk(ip_str, pkb, data, 2);
 
-  // printf("pk (s): ");
-  // print_short_key(pkb, CRYPTO_PUBLICKEYBYTES, 10);
+  printf("pk (s): ");
+  print_short_key(pkb, CRYPTO_PUBLICKEYBYTES, 10);
 
   kex_ake_initA(ake_senda, tk, eska, pkb);
   printf("[C] ake_senda: ");
@@ -101,6 +102,10 @@ int main(){
     if (b == 1) {
       printf("[C] Enter the message you want to send to the server: ");
       scanf("%[^\n]%*c", plaintext);
+      if(memcmp(plaintext, "end", 3) == 0){
+        printf("Closing connection...\n");
+        break;
+      }
     } else {
       memcpy(plaintext, TEST_MESSAGE, sizeof(TEST_MESSAGE));
       printf("[C] plaintext: %s", plaintext);
