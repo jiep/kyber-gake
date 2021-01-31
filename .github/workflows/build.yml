@@ -45,7 +45,7 @@ jobs:
       name: Run commands
       with:
         arch: armv6
-        distro: ubuntu20.04
+        distro: stretch
 
         install: apt-get install cmake make openssl
 
