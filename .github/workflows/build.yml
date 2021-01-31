@@ -49,9 +49,9 @@ jobs:
 
         install: |
           apt-get update -q -y
-          apt-get install cmake make openssl git unzip
+          apt-get install make openssl git unzip wget
 
-          git clone https://github.com/Kitware/CMake/archive/v3.19.4.zip
+          wget https://github.com/Kitware/CMake/archive/v3.19.4.zip
           unzip v3.19.4.zip
           cd CMake-3.19.4
           ./bootstrap
