@@ -35,7 +35,7 @@ jobs:
         retention-days: 7
         if-no-files-found: error
 
-  build_arm:
+  build_arm64:
     runs-on: ubuntu-latest
 
     steps:
@@ -59,11 +59,10 @@ jobs:
     - name: Archive binaries
       uses: actions/upload-artifact@v2
       with:
-        name: armv6
+        name: arm64
         path: |
-          ${PWD}/artifacts/build/ref/test_gake*
-          ${PWD}/artifacts/build/avx2/test_gake*
-          ${PWD}/artifacts/build/networking/*
+          ./artifacts/build/ref/test_gake*
+          ./artifacts/build/networking/*
         retention-days: 7
         if-no-files-found: error
 
