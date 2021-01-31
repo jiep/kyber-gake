@@ -138,7 +138,6 @@ int main(int argc, char *argv[]){
       printf("[S] Enter the message you want to send to the client: ");
       scanf("%[^\n]%*c", plaintext);
       if(memcmp(plaintext, "end", 3) == 0){
-        printf("Closing connection...\n");
         break;
       }
     } else {
@@ -158,6 +157,7 @@ int main(int argc, char *argv[]){
   }
 
   free(data);
+  printf("Closing connection...\n");
   close(sockert_file_descriptor);
   return 0;
 }
