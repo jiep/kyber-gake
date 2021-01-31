@@ -45,7 +45,7 @@ jobs:
       name: Run commands
       with:
         arch: armv7
-        distro: buster
+        distro: ubuntu20.04
 
         install: |
           apt-get update -q -y
