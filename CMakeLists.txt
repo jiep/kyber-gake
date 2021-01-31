@@ -19,8 +19,12 @@ find_package(OpenSSL 1.1.1 REQUIRED)
 find_package(Threads REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
+EXECUTE_PROCESS(COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE)
+
 add_subdirectory(ref)
 if(NOT WIN32)
-  add_subdirectory(avx2)
+  if(${ARCHITECTURE} STREQUAL "x86_64")
+    add_subdirectory(avx2)
+  endif()
   add_subdirectory(networking)
 endif()
