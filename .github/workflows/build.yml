@@ -51,6 +51,12 @@ jobs:
           apt-get update -q -y
           apt-get install -y make cmake openssl libssl-dev build-essential
 
+        setup: |
+            mkdir -p `pwd`/artifacts
+
+        dockerRunArgs: |
+          --volume `pwd`/artifacts:/artifacts"
+
         run: |
           uname -a
           bash ./build.sh
