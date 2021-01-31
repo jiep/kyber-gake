@@ -45,9 +45,11 @@ jobs:
       name: Run commands
       with:
         arch: armv6
-        distro: stretch
+        distro: jessie
 
-        install: apt-get install cmake make openssl
+        install: |
+          apt-get update -q -y
+          apt-get install cmake make openssl
 
         run: |
           uname -a
