@@ -55,7 +55,7 @@ jobs:
             mkdir -p `pwd`/artifacts
 
         dockerRunArgs: |
-          --volume `pwd`/artifacts:/artifacts"
+          --volume `pwd`/artifacts:/artifacts
 
         run: |
           uname -a
