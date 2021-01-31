@@ -10,7 +10,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build_x86_64:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,11 +27,41 @@ jobs:
     - name: Archive binaries
       uses: actions/upload-artifact@v2
       with:
-        name: binaries
+        name: x86_64
         path: |
           ./build/ref/test_gake*
           ./build/avx2/test_gake*
           ./build/networking/*
+        retention-days: 7
+        if-no-files-found: error
+
+  build_arm:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - uses: actions/checkout@v2.1.0
+    - uses: uraimo/run-on-arch-action@v2.0.5
+      name: Run commands
+      with:
+        arch: armv6
+        distro: ubuntu20.04
+
+        install: apt-get install cmake make openssl
+
+        run: |
+          uname -a
+          bash ./build.sh
+          mv ./build /artifacts
+
+    - name: Archive binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: armv6
+        path: |
+          ${PWD}/artifacts/build/ref/test_gake*
+          ${PWD}/artifacts/build/avx2/test_gake*
+          ${PWD}/artifacts/build/networking/*
         retention-days: 7
         if-no-files-found: error
 

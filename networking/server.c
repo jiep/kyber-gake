@@ -76,10 +76,10 @@ int main(int argc, char *argv[]){
 
   read_ca_data(argv[2], 2, data);
 
-  // for (int i = 0; i < 2; i++) {
-  //   printf("[%d] ", i);
-  //   print_short_key(data[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
-  // }
+  for (int i = 0; i < 2; i++) {
+    printf("[%d] ", i);
+    print_short_key(data[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
+  }
 
   char ip_str[17];
   memcpy(ip_str, argv[3], 17);

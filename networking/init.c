@@ -133,30 +133,30 @@ int main() {
 
   init_parties(parties, NUM_PARTIES);
 
-  // for (int i = 0; i < NUM_PARTIES; i++) {
-  //   crypto_kem_keypair(parties[i].public_key, parties[i].secret_key);
-  //   print_short_key(parties[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
-  //   printf("-----------------------------------------------\n");
-  //   print_short_key(parties[i].secret_key, CRYPTO_SECRETKEYBYTES, 10);
-  //   printf("-----------------------------------------------\n");
-  //   print_ip_hex(ips[i]);
-  //   printf("-----------------------------------------------\n");
-  //
-  //   memcpy(pps[i].ip, ips[i], sizeof(ip_t));
-  //   memcpy(pps[i].public_key, parties[i].public_key, CRYPTO_PUBLICKEYBYTES);
-  //
-  //   keys_t keys;
-  //   memcpy(keys.public_key, parties[i].public_key, CRYPTO_PUBLICKEYBYTES);
-  //   memcpy(keys.secret_key, parties[i].secret_key, CRYPTO_SECRETKEYBYTES);
-  //
-  //   char filename[21];
-  //   char ip_str[17];
-  //   ip_to_str(ips[i], ip_str);
-  //   sprintf(filename, "%s.bin", ip_str);
-  //   write_keys(&keys, filename);
-  // }
+  for (int i = 0; i < NUM_PARTIES; i++) {
+    crypto_kem_keypair(parties[i].public_key, parties[i].secret_key);
+    print_short_key(parties[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
+    printf("-----------------------------------------------\n");
+    print_short_key(parties[i].secret_key, CRYPTO_SECRETKEYBYTES, 10);
+    printf("-----------------------------------------------\n");
+    print_ip_hex(ips[i]);
+    printf("-----------------------------------------------\n");
 
-  // write_ca_info(pps, NUM_PARTIES, filename_ca);
+    memcpy(pps[i].ip, ips[i], sizeof(ip_t));
+    memcpy(pps[i].public_key, parties[i].public_key, CRYPTO_PUBLICKEYBYTES);
+
+    keys_t keys;
+    memcpy(keys.public_key, parties[i].public_key, CRYPTO_PUBLICKEYBYTES);
+    memcpy(keys.secret_key, parties[i].secret_key, CRYPTO_SECRETKEYBYTES);
+
+    char filename[21];
+    char ip_str[17];
+    ip_to_str(ips[i], ip_str);
+    sprintf(filename, "%s.bin", ip_str);
+    write_keys(&keys, filename);
+  }
+
+  write_ca_info(pps, NUM_PARTIES, filename_ca);
   ca_public* data = (ca_public*) malloc(NUM_PARTIES*sizeof(ca_public));
   read_ca_data(filename_ca, NUM_PARTIES, data);
 
@@ -166,17 +166,17 @@ int main() {
     print_short_key(data[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
     print_ip_hex(data[i].ip);
 
-    // char filename[20];
-    // char ip_str[17];
-    // ip_to_str(ips[i], ip_str);
-    // sprintf(filename, "%s.sk", ip_str);
-    // printf("filename %s\n", filename);
-    // keys_t keys_read;
-    // read_keys(filename, &keys_read);
-    // printf("w (sk): ");
-    // print_key(keys_read.secret_key, CRYPTO_SECRETKEYBYTES);
-    // printf("w (pk): ");
-    // print_key(keys_read.public_key, CRYPTO_PUBLICKEYBYTES);
+    char filename[20];
+    char ip_str[17];
+    ip_to_str(ips[i], ip_str);
+    sprintf(filename, "%s.sk", ip_str);
+    printf("filename %s\n", filename);
+    keys_t keys_read;
+    read_keys(filename, &keys_read);
+    printf("w (sk): ");
+    print_key(keys_read.secret_key, CRYPTO_SECRETKEYBYTES);
+    printf("w (pk): ");
+    print_key(keys_read.public_key, CRYPTO_PUBLICKEYBYTES);
   }
 
   free(pps);
