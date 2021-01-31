@@ -49,7 +49,7 @@ jobs:
 
         install: |
           apt-get update -q -y
-          apt-get install make cmake openssl
+          apt-get install make cmake openssl build-essential
 
         run: |
           uname -a
