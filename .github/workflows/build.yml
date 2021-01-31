@@ -44,7 +44,7 @@ jobs:
     - uses: uraimo/run-on-arch-action@v2.0.5
       name: Run commands
       with:
-        arch: armv6
+        arch: armv7
         distro: buster
 
         install: |
