@@ -45,18 +45,11 @@ jobs:
       name: Run commands
       with:
         arch: armv6
-        distro: jessie
+        distro: buster
 
         install: |
           apt-get update -q -y
-          apt-get install make openssl git unzip wget
-
-          wget https://github.com/Kitware/CMake/archive/v3.19.4.zip
-          unzip v3.19.4.zip
-          cd CMake-3.19.4
-          ./bootstrap
-          make
-          make install
+          apt-get install make cmake openssl
 
         run: |
           uname -a
