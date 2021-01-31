@@ -56,13 +56,18 @@ jobs:
           bash ./build.sh
           mv ./build /artifacts
 
+    - name: Show directories
+      run: |
+        ls -lah .
+        pwd
+
     - name: Archive binaries
       uses: actions/upload-artifact@v2
       with:
         name: arm64
         path: |
-          ./artifacts/build/ref/test_gake*
-          ./artifacts/build/networking/*
+          `pwd`/artifacts/build/ref/test_gake*
+          `pwd`/artifacts/build/networking/*
         retention-days: 7
         if-no-files-found: error
 
