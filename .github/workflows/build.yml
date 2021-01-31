@@ -73,7 +73,7 @@ jobs:
         name: arm64
         path: |
           ./artifacts/build/ref/test_gake*
-          ./artifacts/build/networking/*
+          ./artifacts/build/networking/{client,server}
         retention-days: 7
         if-no-files-found: error
 
@@ -96,7 +96,7 @@ jobs:
     - name: Run tests
       run: |
         mkdir -p results
-        mv binaries build
+        mv x86_64 build
         chmod +x build/ref/*
         chmod +x build/avx2/*
         virtualenv --python=python3 venv
@@ -145,12 +145,12 @@ jobs:
 
     - name: Upload artifacts
       run: |
-        mv binaries GAKE
-        zip -r GAKE.zip GAKE
+        zip -r x86_64.zip x86_64
+        zip -r arm64.zip arm64
         zip -r results.zip results
         set -x
         assets=()
-        for asset in "GAKE.zip" results.zip; do
+        for asset in *.zip; do
           assets+=("-a" "$asset")
         done
         hub release create "${assets[@]}" -m "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.version }}"
