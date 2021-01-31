@@ -62,11 +62,6 @@ jobs:
           bash ./build.sh
           mv ./build /artifacts
 
-    - name: Show directories
-      run: |
-        ls -lah .
-        pwd
-
     - name: Archive binaries
       uses: actions/upload-artifact@v2
       with:
