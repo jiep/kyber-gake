@@ -44,8 +44,8 @@ jobs:
     - uses: uraimo/run-on-arch-action@v2.0.5
       name: Run commands
       with:
-        arch: armv7
-        distro: ubuntu20.04
+        arch: aarch64
+        distro: buster
 
         install: |
           apt-get update -q -y
