@@ -33,14 +33,8 @@ int main(int argc, char *argv[]){
   serveraddress.sin_port = htons(PORT);
   serveraddress.sin_family = AF_INET;
 
-  connection = connect(socket_file_descriptor, (SA*)&serveraddress, sizeof(serveraddress));
-  if(connection == -1){
-    printf("Connection with the server failed.!\n");
-    exit(1);
-  }
-
   keys_t keys;
-  ca_public* data = (ca_public*) malloc(2*sizeof(ca_public));
+  ca_public* data = (ca_public*) malloc(4*sizeof(ca_public));
 
   unsigned char pkb[CRYPTO_PUBLICKEYBYTES];
 
@@ -57,21 +51,27 @@ int main(int argc, char *argv[]){
   printf("sk (c): ");
   print_short_key(keys.secret_key, CRYPTO_SECRETKEYBYTES, 10);
 
-  read_ca_data(argv[2], 2, data);
+  read_ca_data(argv[2], 4, data);
 
-  // for (int i = 0; i < 2; i++) {
-  //   printf("[%d] ", i);
-  //   print_short_key(data[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
-  //   printf("ip: %d\n", data[i].ip[0]);
-  //   printf("---------------\n");
-  // }
+  for (int i = 0; i < 4; i++) {
+    printf("[%d] ", i);
+    print_short_key(data[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
+    printf("ip: %d\n", data[i].ip[0]);
+    printf("---------------\n");
+  }
 
   char ip_str[17];
   memcpy(ip_str, argv[3], 17);
-  get_pk(ip_str, pkb, data, 2);
+  get_pk(ip_str, pkb, data, 4);
 
   printf("pk (s): ");
   print_short_key(pkb, CRYPTO_PUBLICKEYBYTES, 10);
+
+  connection = connect(socket_file_descriptor, (SA*)&serveraddress, sizeof(serveraddress));
+  if(connection == -1){
+    printf("Connection with the server failed.!\n");
+    exit(1);
+  }
 
   kex_ake_initA(ake_senda, tk, eska, pkb);
   printf("[C] ake_senda: ");

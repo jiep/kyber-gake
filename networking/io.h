@@ -22,3 +22,9 @@ void set_message(uint8_t* iv, uint8_t* tag, char* ct, int ct_len, uint8_t* messa
 void unset_message(uint8_t* message, uint8_t* iv, uint8_t* tag, char* ct, int* ct_len);
 void encrypt(char* m, uint8_t* k, uint8_t* message);
 void decrypt(uint8_t* message, uint8_t* k, char* m);
+int read_ca_data(char* filename, int num_parties, ca_public* data);
+int write_keys(keys_t* key, char* outfile);
+int read_ips(char* filename, ip_t* ips);
+int write_ca_info(ca_public* pps, int num_parties, char* outfile);
+int count_lines(char* filename);
+int get_index(ip_t* ips, int length, char* ip);

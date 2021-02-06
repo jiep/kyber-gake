@@ -106,3 +106,91 @@ void decrypt(uint8_t* message, uint8_t* k, char* m) {
 
   gcm_decrypt(ct, ct_len, aad, aad_len, tag, k, iv, AES_256_IVEC_LENGTH, m);
 }
+
+int write_keys(keys_t* key, char* outfile) {
+  FILE* fp;
+  size_t len = 0;
+  ssize_t read;
+  fp = fopen(outfile, "wb");
+  if (fp == NULL)
+    return 1;
+
+  fwrite(key, sizeof(keys_t), 1, fp);
+
+  fclose(fp);
+
+  return 0;
+}
+
+int read_ips(char* filename, ip_t* ips) {
+  FILE* fp;
+  char* line = NULL;
+  size_t len = 0;
+  ssize_t read;
+  fp = fopen(filename, "r");
+  if (fp == NULL)
+    return 1;
+
+  int i = 0;
+  while ((read = getline(&line, &len, fp)) != -1) {
+    char* token;
+    int j = 0;
+    ip_t ip;
+    while (token = strsep(&line, ".")){
+      ip[j] = atoi(token);
+      j++;
+    }
+    // print_ip_hex(ip);
+    memcpy(ips[i], ip, sizeof(ip_t));
+    i++;
+  }
+
+  fclose(fp);
+  if (line) free(line);
+
+  return 0;
+}
+
+int write_ca_info(ca_public* pps, int num_parties, char* outfile) {
+  FILE* fp;
+  size_t len = 0;
+  ssize_t read;
+  fp = fopen(outfile, "wb");
+  if (fp == NULL)
+    return 1;
+
+  fwrite(pps, sizeof(ca_public), num_parties, fp);
+
+  fclose(fp);
+
+  return 0;
+}
+
+int count_lines(char* filename) {
+  FILE* fp;
+  fp = fopen(filename, "r");
+  if (fp == NULL)
+    return -1;
+
+  int lines = 0;
+  while(!feof(fp)) {
+    char ch = fgetc(fp);
+    if(ch == '\n'){
+      lines++;
+    }
+  }
+
+  fclose(fp);
+  return lines;
+}
+
+int get_index(ip_t* ips, int length, char* ip) {
+  for (int i = 0; i < length; i++) {
+    char ip_str[17];
+    ip_to_str(ips[i], ip_str);
+    if(strncmp(ip_str, ip, 17) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}

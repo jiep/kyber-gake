@@ -31,6 +31,12 @@ int main(int argc, char *argv[]){
     printf("Socket fd: %d\n", sockert_file_descriptor);
   }
 
+  int enable = 1;
+  if (setsockopt(sockert_file_descriptor, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
+    printf("setsockopt(SO_REUSEADDR) failed!\n");
+    exit(1);
+  }
+
   bzero(&serveraddress, sizeof(serveraddress));
   serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
   serveraddress.sin_port = htons(PORT);
