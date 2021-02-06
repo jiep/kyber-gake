@@ -12,6 +12,46 @@
 #include "../ref/utils.h"
 #include "../ref/gake.h"
 
+void start_client(uint8_t* pk, uint8_t* sk, uint8_t* pk_server, char* ip_server, uint8_t* key) {
+  struct sockaddr_in serveraddress;
+
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
+  if(fd == -1){
+    printf("Creation of Socket failed.!\n");
+    exit(1);
+  }
+
+  bzero(&serveraddress, sizeof(serveraddress));
+  serveraddress.sin_addr.s_addr = inet_addr(ip_server);
+  serveraddress.sin_port = htons(PORT);
+  serveraddress.sin_family = AF_INET;
+
+  unsigned char eska[CRYPTO_SECRETKEYBYTES];
+  unsigned char ake_senda[KEX_AKE_SENDABYTES];
+  unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
+  unsigned char tk[KEX_SSBYTES];
+
+  kex_ake_initA(ake_senda, tk, eska, pk_server);
+  printf("[C] ake_senda: ");
+  print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
+
+  ssize_t bytes = 0;
+
+  bytes = write(fd, ake_senda, sizeof(ake_senda));
+
+  // if(bytes >= 0){
+  //   printf("Data sent successfully!\n");
+  // }
+
+  read(fd, ake_sendb, sizeof(ake_sendb));
+  printf("[S] ake_sendb: ");
+  print_short_key(ake_sendb, KEX_AKE_SENDABYTES, 10);
+
+  kex_ake_sharedA(key, ake_sendb, tk, eska, sk);
+  printf("[C] key: ");
+  print_key(key, KEX_SSBYTES);
+}
+
 void start_server(uint8_t* pk, uint8_t* sk, uint8_t* pk_client, uint8_t* key) {
   struct sockaddr_in serveraddress, client;
   socklen_t length;
@@ -59,13 +99,11 @@ void start_server(uint8_t* pk, uint8_t* sk, uint8_t* pk_client, uint8_t* key) {
     exit(1);
   }
 
-  unsigned char pka[CRYPTO_PUBLICKEYBYTES];
   unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
   unsigned char ake_senda[KEX_AKE_SENDABYTES];
-  unsigned char kb[KEX_SSBYTES];
 
   bzero(ake_senda, sizeof(ake_senda));
-  bzero(kb, sizeof(kb));
+  bzero(key, sizeof(key));
 
   int bytes = 0;
 
@@ -73,7 +111,7 @@ void start_server(uint8_t* pk, uint8_t* sk, uint8_t* pk_client, uint8_t* key) {
   printf("[C] ake_senda: ");
   print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
 
-  kex_ake_sharedB(ake_sendb, kb, ake_senda, sk, pk_client);
+  kex_ake_sharedB(ake_sendb, key, ake_senda, sk, pk_client);
   printf("[S] ake_sendb: ");
   print_short_key(ake_sendb, KEX_AKE_SENDABYTES, 10);
 
@@ -84,7 +122,7 @@ void start_server(uint8_t* pk, uint8_t* sk, uint8_t* pk_client, uint8_t* key) {
   }
 
   printf("[S] key: ");
-  print_key(kb, KEX_SSBYTES);
+  print_key(key, KEX_SSBYTES);
 
   close(fd);
 }
@@ -178,13 +216,20 @@ int main(int argc, char* argv[]) {
   printf("right: %s\n", (char*) party.pids[right]);
 
   char ip_str[17];
-  unsigned char pka[CRYPTO_PUBLICKEYBYTES];
-  get_pk((char*) party.pids[left], pka, data, NUM_PARTIES);
+  unsigned char pk_left[CRYPTO_PUBLICKEYBYTES];
+  unsigned char pk_right[CRYPTO_PUBLICKEYBYTES];
+  get_pk((char*) party.pids[left], pk_left, data, NUM_PARTIES);
+  get_pk((char*) party.pids[right], pk_right, data, NUM_PARTIES);
 
-  printf("pk (c): ");
-  print_short_key(pka, CRYPTO_PUBLICKEYBYTES, 10);
+  printf("pk (l): ");
+  print_short_key(pk_left, CRYPTO_PUBLICKEYBYTES, 10);
 
-  start_server(party.public_key, party.secret_key, pka, party.key_left);
+  start_server(party.public_key, party.secret_key, pk_left, party.key_left);
+  print_party(&party, 0, NUM_PARTIES, 10);
+  start_client(party.public_key, party.secret_key, pk_right, (char*) party.pids[right], party.key_left);
+
+  printf("pk (l): ");
+  print_short_key(pk_left, CRYPTO_PUBLICKEYBYTES, 10);
   free(ips);
   free(data);
   return 0;
