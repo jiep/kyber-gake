@@ -349,7 +349,6 @@ int main(int argc, char* argv[]) {
   int status = 0;
   while ((wpid = wait(&status)) > 0); // Wait to finish child processes
 
-  printf("Después de terminar\n");
   print_party(&party, 0, NUM_PARTIES, 10);
 
   // Round 3
@@ -383,11 +382,11 @@ int main(int argc, char* argv[]) {
   //   // return 1;
   // }
 
-  // compute_masterkey_i(&party, NUM_PARTIES, index);
-  // print_party(&party, 0, NUM_PARTIES, 10);
-  //
-  // compute_sk_sid_i(&party, NUM_PARTIES);
-  // print_party(&party, 0, NUM_PARTIES, 10);
+  compute_masterkey_i(&party, NUM_PARTIES, index);
+  print_party(&party, 0, NUM_PARTIES, 10);
+
+  compute_sk_sid_i(&party, NUM_PARTIES);
+  print_party(&party, 0, NUM_PARTIES, 10);
 
   free(ips);
   free(data);
