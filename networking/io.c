@@ -50,7 +50,9 @@ int get_pk(char* ip_str, uint8_t* pk, ca_public* data, int length) {
 
 void set_ip(char* ip_str, ip_t* ip) {
   short j = 0;
-  char* token = strtok(ip_str, ".");
+  char* ip_cpy = malloc((strlen(ip_str)+1)*sizeof(char));
+  strncpy(ip_cpy, ip_str, strlen(ip_str)+1);
+  char* token = strtok(ip_cpy, ".");
   ip_t out;
   for (short j = 0; j < 4; j++) {
     uint8_t value = (uint8_t) atoi(token);
@@ -58,6 +60,7 @@ void set_ip(char* ip_str, ip_t* ip) {
     token = strtok(NULL, ".");
   }
   memcpy(ip, out, sizeof(ip_t));
+  free(ip_cpy);
 }
 
 void ip_to_str(ip_t ip, char* ip_str) {

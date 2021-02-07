@@ -122,10 +122,13 @@ int main(int argc, char* argv[]) {
   printf("pk (r): ");
   print_short_key(pk_right, CRYPTO_PUBLICKEYBYTES, 10);
 
-  start_server(party.public_key, party.secret_key, pk_left, party.key_left);
+  // start_server(party.public_key, party.secret_key, pk_left, party.key_left);
   // print_party(&party, 0, NUM_PARTIES, 10);
 
   // start_client(party.public_key, party.secret_key, pk_right, (char*) party.pids[right], party.key_left);
+
+  printf("left: %s\n", (char*) party.pids[left]);
+  printf("right: %s\n", (char*) party.pids[right]);
 
   int pi_d;
   int pid;
@@ -243,10 +246,8 @@ int main(int argc, char* argv[]) {
         exit(1);
       }
 
-      printf("ip: %s\n", party.pids[right]);
-
       bzero(&serveraddress, sizeof(serveraddress));
-      serveraddress.sin_addr.s_addr = inet_addr("192.168.68.102");
+      serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[right]);
       serveraddress.sin_port = htons(PORT);
       serveraddress.sin_family = AF_INET;
 
@@ -255,7 +256,7 @@ int main(int argc, char* argv[]) {
         connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
 
         if(connection == -1){
-          printf("Waiting for the server to be ready...\n");
+          printf("Waiting for the server %s to be ready...\n", (char*) party.pids[right]);
           sleep(3);
         }
       } while(connection == -1);
