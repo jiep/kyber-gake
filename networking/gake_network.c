@@ -13,12 +13,63 @@
 #include "../ref/utils.h"
 #include "../ref/gake.h"
 
-void start_client(uint8_t* pk, uint8_t* sk, uint8_t* pk_server, char* ip_server, uint8_t* key) {
+void compute_masterkey_i(Party* party, int num_parties, int index) {
 
+  memcpy(party->masterkey[index],
+         party->key_left, KEX_SSBYTES);
+
+  for (int j = 1; j < num_parties; j++) {
+    MasterKey mk;
+    memcpy(mk, party->key_left, KEX_SSBYTES);
+    for (int k = 0; k < j; k++) {
+      xor_keys(mk, party->xs[mod(index-k-1,num_parties)], mk);
+    }
+
+    memcpy(party->masterkey[mod(index-j, num_parties)],
+           mk, KEX_SSBYTES);
+
+  }
 }
 
-void start_server(uint8_t* pk, uint8_t* sk, uint8_t* pk_client, uint8_t* key) {
+void compute_xs_commitment(Party* party, int index) {
+    X xi;
+    Coins ri;
+    Commitment ci;
 
+    unsigned char msg[KEX_SSBYTES + sizeof(int)];
+    init_to_zero(msg, KEX_SSBYTES + sizeof(int));
+    char buf_int[sizeof(int)];
+    init_to_zero((unsigned char*) buf_int, KEX_SSBYTES + sizeof(int));
+    itoa(index, buf_int);
+
+    xor_keys(party->key_right, party->key_left, xi);
+    randombytes(ri, COMMITMENTCOINSBYTES);
+
+    memcpy(msg, &xi, KEX_SSBYTES);
+    memcpy(msg + KEX_SSBYTES, &buf_int, sizeof(int));
+    commit(party->public_key, msg, DEM_LEN, ri, &ci);
+
+    memcpy(party->xs[index], &xi, KEX_SSBYTES);
+    memcpy(party->coins[index], &ri, COMMITMENTCOINSBYTES);
+    party->commitments[index] = ci;
+}
+
+void compute_sk_sid_i(Party* party, int num_parties) {
+
+    unsigned char mki[(KEX_SSBYTES + PID_LENGTH*sizeof(char))*num_parties];
+
+  // Concat master key
+  concat_masterkey(party->masterkey, party->pids, num_parties, mki);
+
+  unsigned char sk_sid[2*KEX_SSBYTES];
+
+  hash_g(sk_sid, mki, 2*KEX_SSBYTES);
+
+  memcpy(party->sk, sk_sid, KEX_SSBYTES);
+  memcpy(party->sid, sk_sid + KEX_SSBYTES, KEX_SSBYTES);
+
+  party->acc = 1;
+  party->term = 1;
 }
 
 void init_party(Party* party, int num_parties, ip_t* ips, keys_t* keys) {
@@ -137,6 +188,7 @@ int main(int argc, char* argv[]) {
   pipe(fd1);
   pipe(fd2);
 
+  // Round 1-2
   pi_d = fork();
   if(pi_d == 0){
     printf("Child Process B:\n\tpid:%d\n\tppid:%d\n",getpid(),getppid());
@@ -216,7 +268,9 @@ int main(int argc, char* argv[]) {
 
     write(fd1[1], party.key_left, sizeof(party.key_left));
     close(fd1[1]);
+    exit(0);
   }
+
   if(pi_d > 0){
     pid = fork();
     if(pid > 0){
@@ -288,8 +342,53 @@ int main(int argc, char* argv[]) {
 
       write(fd2[1], &party.key_right, sizeof(party.key_right));
       close(fd2[1]);
+      exit(0);
     }
   }
+  pid_t wpid;
+  int status = 0;
+  while ((wpid = wait(&status)) > 0); // Wait to finish child processes
+
+  printf("Después de terminar\n");
+  print_party(&party, 0, NUM_PARTIES, 10);
+
+  // Round 3
+  compute_xs_commitment(&party, index);
+  print_party(&party, 0, NUM_PARTIES, 10);
+
+  // Todo: broadcast M^1_i
+
+  // Round 4
+
+  // Todo: broadcast M^2_i
+
+  // int res = check_xs(&party, index, NUM_PARTIES); // Check Xi
+  // int result = check_commitments(&party, index, NUM_PARTIES); // Check commitments
+  //
+  // if (res == 0) {
+  //   printf("Xi are zero!\n");
+  // } else {
+  //   printf("\t\tXi are not zero!\n");
+  //   party.acc = 0;
+  //   party.term = 1;
+  //   // return 1;
+  // }
+  //
+  // if (result == 0) {
+  //   printf("\t\tCommitments are correct!\n");
+  // } else {
+  //   printf("\t\tCommitments are not correct!\n");
+  //   party.acc = 0;
+  //   party.term = 1;
+  //   // return 1;
+  // }
+
+  // compute_masterkey_i(&party, NUM_PARTIES, index);
+  // print_party(&party, 0, NUM_PARTIES, 10);
+  //
+  // compute_sk_sid_i(&party, NUM_PARTIES);
+  // print_party(&party, 0, NUM_PARTIES, 10);
+
   free(ips);
   free(data);
   return 0;

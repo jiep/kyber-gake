@@ -1,5 +1,8 @@
 cmake_policy(SET CMP0079 NEW)
 
+add_executable(test_emoji test_emoji.c emoji.c ../ref/randombytes.c)
+target_link_libraries(test_emoji kyber512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
 add_executable(server server.c io.c ../ref/gake.c ../ref/utils.c ../ref/kex.c ../ref/randombytes.c ../ref/commitment.c ../ref/indcca.c ../ref/aes256gcm.c ../ref/kem.c ../ref/kem_det.c)
 target_link_libraries(server kyber_qrom512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 
