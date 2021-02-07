@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "io.h"
 #include "common.h"
@@ -13,118 +14,11 @@
 #include "../ref/gake.h"
 
 void start_client(uint8_t* pk, uint8_t* sk, uint8_t* pk_server, char* ip_server, uint8_t* key) {
-  struct sockaddr_in serveraddress;
 
-  int fd = socket(AF_INET, SOCK_STREAM, 0);
-  if(fd == -1){
-    printf("Creation of Socket failed.!\n");
-    exit(1);
-  }
-
-  bzero(&serveraddress, sizeof(serveraddress));
-  serveraddress.sin_addr.s_addr = inet_addr(ip_server);
-  serveraddress.sin_port = htons(PORT);
-  serveraddress.sin_family = AF_INET;
-
-  unsigned char eska[CRYPTO_SECRETKEYBYTES];
-  unsigned char ake_senda[KEX_AKE_SENDABYTES];
-  unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
-  unsigned char tk[KEX_SSBYTES];
-
-  kex_ake_initA(ake_senda, tk, eska, pk_server);
-  printf("[C] ake_senda: ");
-  print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
-
-  ssize_t bytes = 0;
-
-  bytes = write(fd, ake_senda, sizeof(ake_senda));
-
-  // if(bytes >= 0){
-  //   printf("Data sent successfully!\n");
-  // }
-
-  read(fd, ake_sendb, sizeof(ake_sendb));
-  printf("[S] ake_sendb: ");
-  print_short_key(ake_sendb, KEX_AKE_SENDABYTES, 10);
-
-  kex_ake_sharedA(key, ake_sendb, tk, eska, sk);
-  printf("[C] key: ");
-  print_key(key, KEX_SSBYTES);
 }
 
 void start_server(uint8_t* pk, uint8_t* sk, uint8_t* pk_client, uint8_t* key) {
-  struct sockaddr_in serveraddress, client;
-  socklen_t length;
-  int sockert_file_descriptor, connection, bind_status, connection_status;
-  int fd = socket(AF_INET, SOCK_STREAM, 0);
-  if(fd == -1){
-    printf("Socket creation failed!\n");
-    exit(1);
-  } else {
-    printf("Socket fd: %d\n", fd);
-  }
 
-  int enable = 1;
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-    printf("setsockopt(SO_REUSEADDR) failed!\n");
-    exit(1);
-  }
-
-  bzero(&serveraddress, sizeof(serveraddress));
-  serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
-  serveraddress.sin_port = htons(PORT);
-  serveraddress.sin_family = AF_INET;
-
-  bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
-
-  if(bind_status == -1){
-    printf("Socket binding failed.!\n");
-    exit(1);
-  }
-
-  connection_status = listen(fd, 5);
-
-  if(connection_status == -1) {
-    printf("Socket is unable to listen for new connections!\n");
-    exit(1);
-  } else {
-    printf("Server is listening for new connection: \n");
-  }
-
-  length = sizeof(client);
-  connection = accept(fd, (SA*)&client, &length);
-
-  if(connection == -1){
-    printf("Server is unable to accept the data from client!\n");
-    exit(1);
-  }
-
-  unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
-  unsigned char ake_senda[KEX_AKE_SENDABYTES];
-
-  bzero(ake_senda, sizeof(ake_senda));
-  bzero(key, sizeof(key));
-
-  int bytes = 0;
-
-  read(connection, ake_senda, sizeof(ake_senda));
-  printf("[C] ake_senda: ");
-  print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
-
-  kex_ake_sharedB(ake_sendb, key, ake_senda, sk, pk_client);
-  printf("[S] ake_sendb: ");
-  print_short_key(ake_sendb, KEX_AKE_SENDABYTES, 10);
-
-  // Send second message
-  bytes = write(connection, ake_sendb, sizeof(ake_sendb));
-  if(bytes >= 0){
-    printf("Data sent successfully!\n");
-  }
-
-  printf("[S] key: ");
-  print_key(key, KEX_SSBYTES);
-
-  close(fd);
 }
 
 void init_party(Party* party, int num_parties, ip_t* ips, keys_t* keys) {
@@ -137,6 +31,7 @@ void init_party(Party* party, int num_parties, ip_t* ips, keys_t* keys) {
   for (int j = 0; j < num_parties; j++) {
     char pid[PID_LENGTH];
     ip_to_str(ips[j], pid);
+    sprintf(pid, "%s", pid);
     memcpy(party->pids[j], pid, PID_LENGTH);
   }
 
@@ -224,12 +119,176 @@ int main(int argc, char* argv[]) {
   printf("pk (l): ");
   print_short_key(pk_left, CRYPTO_PUBLICKEYBYTES, 10);
 
-  start_server(party.public_key, party.secret_key, pk_left, party.key_left);
-  print_party(&party, 0, NUM_PARTIES, 10);
-  start_client(party.public_key, party.secret_key, pk_right, (char*) party.pids[right], party.key_left);
+  printf("pk (r): ");
+  print_short_key(pk_right, CRYPTO_PUBLICKEYBYTES, 10);
 
-  printf("pk (l): ");
-  print_short_key(pk_left, CRYPTO_PUBLICKEYBYTES, 10);
+  start_server(party.public_key, party.secret_key, pk_left, party.key_left);
+  // print_party(&party, 0, NUM_PARTIES, 10);
+
+  // start_client(party.public_key, party.secret_key, pk_right, (char*) party.pids[right], party.key_left);
+
+  int pi_d;
+  int pid;
+  int fd1[2], fd2[2];
+
+  pipe(fd1);
+  pipe(fd2);
+
+  pi_d = fork();
+  if(pi_d == 0){
+    printf("Child Process B:\n\tpid:%d\n\tppid:%d\n",getpid(),getppid());
+
+    struct sockaddr_in serveraddress, client;
+    socklen_t length;
+    int sockert_file_descriptor, connection, bind_status, connection_status;
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(fd == -1){
+      printf("Socket creation failed!\n");
+      exit(1);
+    } else {
+      printf("Socket fd: %d\n", fd);
+    }
+
+    int enable = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
+      printf("setsockopt(SO_REUSEADDR) failed!\n");
+      exit(1);
+    }
+
+    bzero(&serveraddress, sizeof(serveraddress));
+    serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
+    serveraddress.sin_port = htons(PORT);
+    serveraddress.sin_family = AF_INET;
+
+    bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
+
+    if(bind_status == -1){
+      printf("Socket binding failed.!\n");
+      exit(1);
+    }
+
+    connection_status = listen(fd, 5);
+
+    if(connection_status == -1) {
+      printf("Socket is unable to listen for new connections!\n");
+      exit(1);
+    } else {
+      printf("Server is listening for new connection: \n");
+    }
+
+    length = sizeof(client);
+    connection = accept(fd, (SA*)&client, &length);
+
+    if(connection == -1){
+      printf("Server is unable to accept the data from client!\n");
+      exit(1);
+    }
+
+    unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
+    unsigned char ake_senda[KEX_AKE_SENDABYTES];
+
+    bzero(ake_senda, sizeof(ake_senda));
+    bzero(party.key_left, sizeof(party.key_left));
+
+    int bytes = 0;
+
+    read(connection, ake_senda, sizeof(ake_senda));
+    printf("[C] ake_senda: ");
+    print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
+
+    kex_ake_sharedB(ake_sendb, party.key_left, ake_senda, party.secret_key, pk_left);
+    printf("[S] ake_sendb: ");
+    print_short_key(ake_sendb, KEX_AKE_SENDABYTES, 10);
+
+    // Send second message
+    bytes = write(connection, ake_sendb, sizeof(ake_sendb));
+    if(bytes >= 0){
+      printf("Data sent successfully!\n");
+    }
+
+    printf("[S] key (l): ");
+    print_key(party.key_left, KEX_SSBYTES);
+
+    close(fd);
+
+    write(fd1[1], party.key_left, sizeof(party.key_left));
+    close(fd1[1]);
+  }
+  if(pi_d > 0){
+    pid = fork();
+    if(pid > 0){
+      printf("\nParent Process:\n\tpid:%d\n\tppid :%d\n",getpid(),getppid());
+      close(fd1[1]);
+      close(fd2[1]);
+      read(fd1[0], party.key_left, sizeof(party.key_left));
+      printf("key (l): ");
+      print_key(party.key_left, KEX_SSBYTES);
+
+      read(fd2[0], party.key_right, sizeof(party.key_right));
+      printf("key (r): ");
+      print_key(party.key_right, KEX_SSBYTES);
+
+      print_party(&party, 0, NUM_PARTIES, 10);
+      close(fd1[0]);
+      close(fd2[0]);
+    }
+    else if(pid == 0){
+      printf("Child Process A:\n\tpid:%d\n\tppid:%d\n",getpid(),getppid());
+
+      struct sockaddr_in serveraddress;
+
+      int fd = socket(AF_INET, SOCK_STREAM, 0);
+      if(fd == -1){
+        printf("Creation of Socket failed.!\n");
+        exit(1);
+      }
+
+      printf("ip: %s\n", party.pids[right]);
+
+      bzero(&serveraddress, sizeof(serveraddress));
+      serveraddress.sin_addr.s_addr = inet_addr("192.168.68.102");
+      serveraddress.sin_port = htons(PORT);
+      serveraddress.sin_family = AF_INET;
+
+      int connection;
+      do {
+        connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
+
+        if(connection == -1){
+          printf("Waiting for the server to be ready...\n");
+          sleep(3);
+        }
+      } while(connection == -1);
+
+      unsigned char eska[CRYPTO_SECRETKEYBYTES];
+      unsigned char ake_senda[KEX_AKE_SENDABYTES];
+      unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
+      unsigned char tk[KEX_SSBYTES];
+
+      kex_ake_initA(ake_senda, tk, eska, pk_right);
+      printf("[C] ake_senda: ");
+      print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
+
+      ssize_t bytes = 0;
+
+      bytes = write(fd, ake_senda, sizeof(ake_senda));
+
+      // if(bytes >= 0){
+      //   printf("Data sent successfully!\n");
+      // }
+
+      read(fd, ake_sendb, sizeof(ake_sendb));
+      printf("[S] ake_sendb: ");
+      print_short_key(ake_sendb, KEX_AKE_SENDABYTES, 10);
+
+      kex_ake_sharedA(party.key_right, ake_sendb, tk, eska, party.secret_key);
+      printf("[C] key: ");
+      print_key(party.key_right, KEX_SSBYTES);
+
+      write(fd2[1], &party.key_right, sizeof(party.key_right));
+      close(fd2[1]);
+    }
+  }
   free(ips);
   free(data);
   return 0;
