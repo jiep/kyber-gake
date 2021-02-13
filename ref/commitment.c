@@ -12,6 +12,24 @@ void print_commitment(Commitment* commitment) {
   print_key(commitment->tag, AES_256_GCM_TAG_LENGTH);
 }
 
+int is_zero_commitment(Commitment* commitment) {
+  unsigned char zero[KYBER_CIPHERTEXTBYTES];
+  init_to_zero(zero, KYBER_CIPHERTEXTBYTES);
+
+  if(memcmp(commitment->ciphertext_kem, zero, KYBER_CIPHERTEXTBYTES) != 0 ||
+     memcmp(commitment->ciphertext_dem, zero, DEM_LEN) != 0 ||
+     memcmp(commitment->tag, zero, AES_256_GCM_TAG_LENGTH) != 0) {
+       return 1;
+  }
+  return 0;
+}
+
+void copy_commitment(uint8_t* buf, Commitment* commitment) {
+  memcpy(commitment->ciphertext_kem, buf, KYBER_CIPHERTEXTBYTES);
+  memcpy(commitment->ciphertext_dem, buf + KYBER_CIPHERTEXTBYTES, DEM_LEN);
+  memcpy(commitment->tag, buf + KYBER_CIPHERTEXTBYTES + DEM_LEN, AES_256_GCM_TAG_LENGTH);
+}
+
 int commit(unsigned char* pk,
            unsigned char* m,
            int len_m,

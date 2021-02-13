@@ -22,6 +22,10 @@ typedef struct Commitment {
 
 void print_commitment(Commitment* commitment);
 
+void copy_commitment(uint8_t* buf, Commitment* commitment);
+
+int is_zero_commitment(Commitment* commitment);
+
 int commit(unsigned char* pk,
            unsigned char* m,
            int len_m,

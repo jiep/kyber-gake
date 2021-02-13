@@ -120,6 +120,15 @@ void set_m2(Party* party, int index, uint8_t* message) {
   memcpy(message + PID_LENGTH + KEX_SSBYTES, party->coins[index], COMMITMENTCOINSBYTES);
 }
 
+int check_m1_received(Party* party, int num_parties) {
+  for (int i = 0; i < num_parties; i++) {
+    if(is_zero_commitment(&party->commitments[i]) != 0){
+      return 1;
+    }
+  }
+  return 0;
+}
+
 int main(int argc, char* argv[]) {
 
   if (argc != 5) {
@@ -193,8 +202,7 @@ int main(int argc, char* argv[]) {
   printf("left: %s\n", (char*) party.pids[left]);
   printf("right: %s\n", (char*) party.pids[right]);
 
-  int pi_d;
-  int pid;
+  int pi_d, pid;
   int fd1[2], fd2[2];
 
   pipe(fd1);
@@ -357,6 +365,7 @@ int main(int argc, char* argv[]) {
       exit(0);
     }
   }
+
   pid_t wpid;
   int status = 0;
   while ((wpid = wait(&status)) > 0); // Wait to finish child processes
@@ -373,82 +382,157 @@ int main(int argc, char* argv[]) {
   printf("m1: ");
   print_key(m1, PID_LENGTH + COMMITMENT_LENGTH);
 
-  for (int i = 0; i < NUM_PARTIES; i++) {
-    if(i != index) {
-      struct sockaddr_in serveraddress;
+  int pid_3, pid2_3;
+  int fd_3[2*NUM_PARTIES];
 
+  for (int i = 0; i < NUM_PARTIES; i++) {
+    pipe(&fd_3[i]);
+  }
+
+  pid_3 = fork();
+  if (pid_3 == 0) {
+    printf("Client\n");
+    // for (int i = 0; i < NUM_PARTIES; i++) {
+    //   if(i != index) {
+    //     struct sockaddr_in serveraddress;
+    //
+    //     int fd = socket(AF_INET, SOCK_STREAM, 0);
+    //     if(fd == -1){
+    //       printf("Creation of Socket failed.!\n");
+    //       exit(1);
+    //     }
+    //
+    //     bzero(&serveraddress, sizeof(serveraddress));
+    //     serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
+    //     serveraddress.sin_port = htons(PORT);
+    //     serveraddress.sin_family = AF_INET;
+    //
+    //     int connection;
+    //     do {
+    //       connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
+    //
+    //       if(connection == -1){
+    //         printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
+    //         sleep(3);
+    //       }
+    //     } while(connection == -1);
+    //
+    //     ssize_t bytes = write(fd, m1, sizeof(m1));
+    //
+    //     if(bytes > 0){
+    //       printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
+    //     }
+    //   }
+    // }
+    exit(0);
+  }
+
+  if (pid_3 > 0) {
+    pid2_3 = fork();
+    if(pid2_3 > 0) {
+      printf("Parent\n");
+      for (int i = 0; i < NUM_PARTIES; i++) {
+        close(fd_3[2*i + 1]);
+        unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
+        char u_i[PID_LENGTH];
+        read(fd_3[2*i], m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+        printf("Read from parent: \n");
+        print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+        memcpy(u_i, m1_i, PID_LENGTH);
+        int index = get_index(ips, NUM_PARTIES, u_i);
+        Commitment ci;
+        copy_commitment(m1_i + PID_LENGTH, &ci);
+        party.commitments[index] = ci;
+        print_party(&party, 0, NUM_PARTIES, 10);
+      }
+    } else if(pid2_3 == 0) {
+      printf("Server\n");
       int fd = socket(AF_INET, SOCK_STREAM, 0);
       if(fd == -1){
-        printf("Creation of Socket failed.!\n");
+        printf("Socket creation failed!\n");
         exit(1);
+      } else {
+        printf("Socket fd: %d\n", fd);
       }
 
+      int enable = 1;
+      if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
+        printf("setsockopt(SO_REUSEADDR) failed!\n");
+        exit(1);
+      }
+      struct sockaddr_in serveraddress, client;
+
       bzero(&serveraddress, sizeof(serveraddress));
-      serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
+      serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
       serveraddress.sin_port = htons(PORT);
       serveraddress.sin_family = AF_INET;
 
-      int connection;
-      do {
-        connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
+      int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
 
-        if(connection == -1){
-          printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
-          sleep(3);
-        }
-      } while(connection == -1);
-
-      ssize_t bytes = write(fd, m1, sizeof(m1));
-
-      if(bytes > 0){
-        printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
+      if(bind_status == -1){
+        printf("Socket binding failed.!\n");
+        exit(1);
       }
+
+      int connection_status = listen(fd, 5);
+
+      if(connection_status == -1) {
+        printf("Socket is unable to listen for new connections!\n");
+        exit(1);
+      } else {
+        printf("Server is listening for new connection: \n");
+      }
+
+      fd_set active_fd_set, read_fd_set;
+      FD_ZERO (&active_fd_set);
+      FD_SET (fd, &active_fd_set);
+
+      while(check_m1_received(&party, NUM_PARTIES) != 0) {
+        read_fd_set = active_fd_set;
+        if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
+            printf("Error with selec!\n");
+            exit(1);
+        }
+        for(int j = 0; j < FD_SETSIZE; ++j){
+          if(FD_ISSET (j, &read_fd_set)){
+            if(j == fd) {
+              int length = sizeof(client);
+              int new = accept(fd, (SA*)&client, &length);
+
+              if(new == -1){
+                printf("Server is unable to accept the data from client!\n");
+                exit(1);
+              }
+              printf("Connection from %s.\n", inet_ntoa(client.sin_addr));
+              FD_SET (new, &active_fd_set);
+            } else {
+              for (int i = 0; i < NUM_PARTIES; i++) {
+                close(fd_3[2*i]);
+              }
+              unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
+              read(j, m1_i, sizeof(m1_i));
+              printf("child received: ");
+              print_short_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH, 10);
+
+              char u_i[PID_LENGTH];
+              memcpy(u_i, m1_i, PID_LENGTH);
+              printf("u_i: %s\n", u_i);
+              int ind = get_index(ips, NUM_PARTIES, u_i);
+              printf("index: %d\n", ind);
+              ind = 0;
+              write(fd_3[2*ind + 1], m1_i, sizeof(m1_i));
+              close(fd_3[2*ind + 1]);
+              close(j);
+              FD_CLR(j, &active_fd_set);
+            }
+          }
+        }
+      }
+      exit(0);
     }
   }
 
-  // int fd = socket(AF_INET, SOCK_STREAM, 0);
-  // if(fd == -1){
-  //   printf("Socket creation failed!\n");
-  //   exit(1);
-  // } else {
-  //   printf("Socket fd: %d\n", fd);
-  // }
-  //
-  // int enable = 1;
-  // if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-  //   printf("setsockopt(SO_REUSEADDR) failed!\n");
-  //   exit(1);
-  // }
-  // struct sockaddr_in serveraddress, client;
-  //
-  // bzero(&serveraddress, sizeof(serveraddress));
-  // serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
-  // serveraddress.sin_port = htons(PORT);
-  // serveraddress.sin_family = AF_INET;
-  //
-  // int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
-  //
-  // if(bind_status == -1){
-  //   printf("Socket binding failed.!\n");
-  //   exit(1);
-  // }
-  //
-  // int connection_status = listen(fd, 5);
-  //
-  // if(connection_status == -1) {
-  //   printf("Socket is unable to listen for new connections!\n");
-  //   exit(1);
-  // } else {
-  //   printf("Server is listening for new connection: \n");
-  // }
-  //
-  // int length = sizeof(client);
-  // int connection = accept(fd, (SA*)&client, &length);
-  //
-  // if(connection == -1){
-  //   printf("Server is unable to accept the data from client!\n");
-  //   exit(1);
-  // }
+  while ((wpid = wait(&status)) > 0); // Wait to finish child processes
 
   // Todo: broadcast M^1_i
 
