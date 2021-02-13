@@ -10,6 +10,10 @@
 #define DEM_LEN (KEX_SSBYTES + sizeof(int))
 #endif
 
+#ifndef COMMITMENT_LENGTH
+#define COMMITMENT_LENGTH (KYBER_CIPHERTEXTBYTES + DEM_LEN + AES_256_GCM_TAG_LENGTH)
+#endif
+
 typedef struct Commitment {
     unsigned char ciphertext_kem[KYBER_CIPHERTEXTBYTES];
     unsigned char ciphertext_dem[DEM_LEN];
