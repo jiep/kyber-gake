@@ -392,38 +392,38 @@ int main(int argc, char* argv[]) {
   pid_3 = fork();
   if (pid_3 == 0) {
     printf("Client\n");
-    // for (int i = 0; i < NUM_PARTIES; i++) {
-    //   if(i != index) {
-    //     struct sockaddr_in serveraddress;
-    //
-    //     int fd = socket(AF_INET, SOCK_STREAM, 0);
-    //     if(fd == -1){
-    //       printf("Creation of Socket failed.!\n");
-    //       exit(1);
-    //     }
-    //
-    //     bzero(&serveraddress, sizeof(serveraddress));
-    //     serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
-    //     serveraddress.sin_port = htons(PORT);
-    //     serveraddress.sin_family = AF_INET;
-    //
-    //     int connection;
-    //     do {
-    //       connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
-    //
-    //       if(connection == -1){
-    //         printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
-    //         sleep(3);
-    //       }
-    //     } while(connection == -1);
-    //
-    //     ssize_t bytes = write(fd, m1, sizeof(m1));
-    //
-    //     if(bytes > 0){
-    //       printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
-    //     }
-    //   }
-    // }
+    for (int i = 0; i < NUM_PARTIES; i++) {
+      if(i != index) {
+        struct sockaddr_in serveraddress;
+
+        int fd = socket(AF_INET, SOCK_STREAM, 0);
+        if(fd == -1){
+          printf("Creation of Socket failed.!\n");
+          exit(1);
+        }
+
+        bzero(&serveraddress, sizeof(serveraddress));
+        serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
+        serveraddress.sin_port = htons(PORT);
+        serveraddress.sin_family = AF_INET;
+
+        int connection;
+        do {
+          connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
+
+          if(connection == -1){
+            printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
+            sleep(3);
+          }
+        } while(connection == -1);
+
+        ssize_t bytes = write(fd, m1, sizeof(m1));
+
+        if(bytes > 0){
+          printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
+        }
+      }
+    }
     exit(0);
   }
 
