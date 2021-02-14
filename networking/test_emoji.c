@@ -13,9 +13,6 @@ int main() {
 
   emojify(key, emojified_key);
 
-  for (int i = 0; i < 4; i++) {
-    printf("%s ", emojified_key[i]);
-  }
-  printf("\n");
+  print_emojified_key(emojified_key);
   return 0;
 }

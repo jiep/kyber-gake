@@ -1,5 +1,6 @@
-#include "emoji.h"
+#include <stdio.h>
 
+#include "emoji.h"
 
 #define EMOJIS_LENGTH 333
 
@@ -50,4 +51,11 @@ void emojify(uint8_t* key, char* emojified_key[4]) {
     int index = (int) (bytesToLong(key, 8*i) % EMOJIS_LENGTH);
     emojified_key[i] = EMOJIS[index];
 	}
+}
+
+void print_emojified_key(char* emojified_key[4]) {
+  for (int i = 0; i < 4; i++) {
+    printf("%s ", emojified_key[i]);
+  }
+  printf("\n");
 }

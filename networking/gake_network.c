@@ -10,6 +10,7 @@
 
 #include "io.h"
 #include "common.h"
+#include "emoji.h"
 #include "../ref/utils.h"
 #include "../ref/gake.h"
 
@@ -143,6 +144,47 @@ int is_zero_xs_coins(X* xs, Coins* coins) {
 int check_m2_received(Party* party, int num_parties) {
   for (int i = 0; i < num_parties; i++) {
     if(is_zero_xs_coins(&party->xs[i], &party->coins[i])){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int check_xs_i(Party* party, int num_parties) {
+  unsigned char zero[KEX_SSBYTES];
+
+  for(int j = 0; j < KEX_SSBYTES; j++){
+    zero[j] = 0;
+  }
+
+  X check;
+  memcpy(check, party->xs[0], KEX_SSBYTES);
+  for (int j = 0; j < num_parties - 1; j++) {
+    xor_keys(party->xs[j+1], check, check);
+  }
+
+  int res = memcmp(check, zero, KEX_SSBYTES);
+  if (res != 0) {
+    return 1;
+  }
+  return 0;
+}
+
+int check_commitments_i(Party* party, int num_parties) {
+  for (int j = 0; j < num_parties; j++) {
+    unsigned char msg[KEX_SSBYTES + sizeof(int)];
+    char buf_int[sizeof(int)];
+    init_to_zero((unsigned char*) buf_int, sizeof(int));
+    itoa(j, buf_int);
+    memcpy(msg, party->xs[j], KEX_SSBYTES);
+    memcpy(msg + KEX_SSBYTES, buf_int, sizeof(int));
+
+    int res_check = check_commitment(party->public_key,
+                     msg,
+                     party->coins[j],
+                     &party->commitments[j]);
+
+    if (res_check != 0) {
       return 1;
     }
   }
@@ -751,35 +793,38 @@ int main(int argc, char* argv[]) {
   int status3, wpid3;
   while ((wpid3 = wait(&status3)) > 0); // Wait to finish child processes
 
+  int res = check_xs_i(&party, NUM_PARTIES); // Check Xi
+  int result = check_commitments_i(&party, NUM_PARTIES); // Check commitments
 
-  // Todo: broadcast M^2_i
+  if (res == 0) {
+    printf("Xi are zero!\n");
+  } else {
+    printf("\t\tXi are not zero!\n");
+    party.acc = 0;
+    party.term = 1;
+    // return 1;
+  }
 
-  // int res = check_xs(&party, index, NUM_PARTIES); // Check Xi
-  // int result = check_commitments(&party, index, NUM_PARTIES); // Check commitments
-  //
-  // if (res == 0) {
-  //   printf("Xi are zero!\n");
-  // } else {
-  //   printf("\t\tXi are not zero!\n");
-  //   party.acc = 0;
-  //   party.term = 1;
-  //   // return 1;
-  // }
-  //
-  // if (result == 0) {
-  //   printf("\t\tCommitments are correct!\n");
-  // } else {
-  //   printf("\t\tCommitments are not correct!\n");
-  //   party.acc = 0;
-  //   party.term = 1;
-  //   // return 1;
-  // }
+  if (result == 0) {
+    printf("\t\tCommitments are correct!\n");
+  } else {
+    printf("\t\tCommitments are not correct!\n");
+    party.acc = 0;
+    party.term = 1;
+    // return 1;
+  }
 
   compute_masterkey_i(&party, NUM_PARTIES, index);
   print_party(&party, 0, NUM_PARTIES, 10);
 
   compute_sk_sid_i(&party, NUM_PARTIES);
   print_party(&party, 0, NUM_PARTIES, 10);
+
+  char* emojified_key[4];
+
+  printf("\n\nsk: ");
+  emojify(party.sk, emojified_key);
+  print_emojified_key(emojified_key);
 
   free(ips);
   free(data);
