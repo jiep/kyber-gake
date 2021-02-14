@@ -191,6 +191,18 @@ int check_commitments_i(Party* party, int num_parties) {
   return 0;
 }
 
+void read_n_bytes(int socket, unsigned int x, void* buffer) {
+  int bytesRead = 0;
+  int result;
+  while (bytesRead < x) {
+    result = read(socket, buffer + bytesRead, x - bytesRead);
+    if (result < 1) {
+      printf("Error!\n");
+    }
+    bytesRead += result;
+  }
+}
+
 int main(int argc, char* argv[]) {
 
   if (argc != 5) {
@@ -324,32 +336,34 @@ int main(int argc, char* argv[]) {
     unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
     unsigned char ake_senda[KEX_AKE_SENDABYTES];
 
-    bzero(ake_senda, sizeof(ake_senda));
-    bzero(party.key_left, sizeof(party.key_left));
+    // bzero(ake_senda, sizeof(ake_senda));
+    // bzero(party.key_left, sizeof(party.key_left));
 
     int bytes = 0;
 
-    read(connection, ake_senda, sizeof(ake_senda));
+    // int b;
+    read_n_bytes(connection, KEX_AKE_SENDABYTES, ake_senda);
+    // b = read(connection, ake_senda, sizeof(ake_senda));
+    // printf("Read from child: KEX_AKE_SENDABYTES: %d\n", b, KEX_AKE_SENDABYTES);
     printf("[C] ake_senda: ");
     print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
 
     kex_ake_sharedB(ake_sendb, party.key_left, ake_senda, party.secret_key, pk_left);
-    printf("[S] ake_sendb: ");
-    print_short_key(ake_sendb, KEX_AKE_SENDABYTES, 10);
+    printf("[C] ake_sendb (%ld):", sizeof(ake_sendb));
+    print_short_key(ake_sendb, KEX_AKE_SENDBBYTES, 10);
 
     // Send second message
     bytes = write(connection, ake_sendb, sizeof(ake_sendb));
-    if(bytes >= 0){
+    if(bytes == KEX_AKE_SENDBBYTES){
       printf("Data sent successfully!\n");
     }
 
     printf("[S] key (l): ");
     print_key(party.key_left, KEX_SSBYTES);
 
-    close(fd);
-
     write(fd1[1], party.key_left, sizeof(party.key_left));
     close(fd1[1]);
+    close(connection);
     exit(0);
   }
 
@@ -403,20 +417,20 @@ int main(int argc, char* argv[]) {
       unsigned char tk[KEX_SSBYTES];
 
       kex_ake_initA(ake_senda, tk, eska, pk_right);
-      printf("[C] ake_senda: ");
+      printf("[C] ake_senda (%ld):", sizeof(ake_senda));
       print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
 
       ssize_t bytes = 0;
 
       bytes = write(fd, ake_senda, sizeof(ake_senda));
 
-      // if(bytes >= 0){
-      //   printf("Data sent successfully!\n");
-      // }
+      if(bytes == KEX_AKE_SENDABYTES){
+        printf("Data sent successfully!\n");
+      }
+      read_n_bytes(fd, KEX_AKE_SENDBBYTES, ake_sendb);
 
-      read(fd, ake_sendb, sizeof(ake_sendb));
       printf("[S] ake_sendb: ");
-      print_short_key(ake_sendb, KEX_AKE_SENDABYTES, 10);
+      print_short_key(ake_sendb, KEX_AKE_SENDBBYTES, 10);
 
       kex_ake_sharedA(party.key_right, ake_sendb, tk, eska, party.secret_key);
       printf("[C] key: ");
@@ -424,6 +438,7 @@ int main(int argc, char* argv[]) {
 
       write(fd2[1], &party.key_right, sizeof(party.key_right));
       close(fd2[1]);
+      // close(fd);
       exit(0);
     }
   }
@@ -434,399 +449,399 @@ int main(int argc, char* argv[]) {
 
   print_party(&party, 0, NUM_PARTIES, 10);
 
-  // Round 3
-  printf("Round 3\n");
-  compute_xs_commitment(&party, index);
-  print_party(&party, 0, NUM_PARTIES, 10);
-
-  unsigned char m1[PID_LENGTH + COMMITMENT_LENGTH];
-  printf("pid%d: %s\n", index, (char*) party.pids[index]);
-  set_m1(&party, index, m1);
-  printf("m1: ");
-  print_key(m1, PID_LENGTH + COMMITMENT_LENGTH);
-
-  int pid_3, pid2_3;
-  int fd_3[2];
-
-  pipe(fd_3);
-
-  // for (int i = 0; i < NUM_PARTIES; i++) {
-  //   pipe(&fd_3[i]);
+  // // Round 3
+  // printf("Round 3\n");
+  // compute_xs_commitment(&party, index);
+  // print_party(&party, 0, NUM_PARTIES, 10);
+  //
+  // unsigned char m1[PID_LENGTH + COMMITMENT_LENGTH];
+  // printf("pid%d: %s\n", index, (char*) party.pids[index]);
+  // set_m1(&party, index, m1);
+  // printf("m1: ");
+  // print_key(m1, PID_LENGTH + COMMITMENT_LENGTH);
+  //
+  // int pid_3, pid2_3;
+  // int fd_3[2];
+  //
+  // pipe(fd_3);
+  //
+  // // for (int i = 0; i < NUM_PARTIES; i++) {
+  // //   pipe(&fd_3[i]);
+  // // }
+  //
+  // pid_3 = fork();
+  // if (pid_3 == 0) {
+  //   printf("Client\n");
+  //   for (int i = 0; i < NUM_PARTIES; i++) {
+  //     if(i != index) {
+  //       struct sockaddr_in serveraddress;
+  //
+  //       int fd = socket(AF_INET, SOCK_STREAM, 0);
+  //       if(fd == -1){
+  //         printf("Creation of Socket failed!\n");
+  //         exit(1);
+  //       }
+  //
+  //       bzero(&serveraddress, sizeof(serveraddress));
+  //       serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
+  //       serveraddress.sin_port = htons(PORT);
+  //       serveraddress.sin_family = AF_INET;
+  //
+  //       int connection;
+  //       do {
+  //         connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
+  //
+  //         if(connection == -1){
+  //           printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
+  //           sleep(3);
+  //         }
+  //       } while(connection == -1);
+  //
+  //       ssize_t bytes = write(fd, m1, sizeof(m1));
+  //
+  //       if(bytes > 0){
+  //         printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
+  //       }
+  //     }
+  //   }
+  //   exit(0);
   // }
-
-  pid_3 = fork();
-  if (pid_3 == 0) {
-    printf("Client\n");
-    for (int i = 0; i < NUM_PARTIES; i++) {
-      if(i != index) {
-        struct sockaddr_in serveraddress;
-
-        int fd = socket(AF_INET, SOCK_STREAM, 0);
-        if(fd == -1){
-          printf("Creation of Socket failed!\n");
-          exit(1);
-        }
-
-        bzero(&serveraddress, sizeof(serveraddress));
-        serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
-        serveraddress.sin_port = htons(PORT);
-        serveraddress.sin_family = AF_INET;
-
-        int connection;
-        do {
-          connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
-
-          if(connection == -1){
-            printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
-            sleep(3);
-          }
-        } while(connection == -1);
-
-        ssize_t bytes = write(fd, m1, sizeof(m1));
-
-        if(bytes > 0){
-          printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
-        }
-      }
-    }
-    exit(0);
-  }
-
-  if (pid_3 > 0) {
-    pid2_3 = fork();
-    if(pid2_3 > 0) {
-      printf("Parent\n");
-      for (int i = 0; i < NUM_PARTIES - 1; i++) {
-      // while(check_m1_received(&party, NUM_PARTIES) != 1) {
-        close(fd_3[1]);
-        unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
-        char u_i[PID_LENGTH];
-        read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_LENGTH);
-        printf("-----------------------------------\n");
-        printf("Read from parent: \n");
-        print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
-        memcpy(u_i, m1_i, PID_LENGTH);
-        int index = get_index(ips, NUM_PARTIES, u_i);
-        printf("index: %d\n", index);
-        Commitment ci;
-        printf("Copy to party\n");
-        copy_commitment(m1_i + PID_LENGTH, &ci);
-        print_commitment(&ci);
-        party.commitments[index] = ci;
-        printf("-----------------------------------\n");
-      }
-      print_party(&party, 0, NUM_PARTIES, 10);
-      // }
-    } else if(pid2_3 == 0) {
-      printf("Server\n");
-      int fd = socket(AF_INET, SOCK_STREAM, 0);
-      if(fd == -1){
-        printf("Socket creation failed!\n");
-        exit(1);
-      } else {
-        printf("Socket fd: %d\n", fd);
-      }
-
-      int enable = 1;
-      if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-        printf("setsockopt(SO_REUSEADDR) failed!\n");
-        exit(1);
-      }
-      struct sockaddr_in serveraddress, client;
-
-      bzero(&serveraddress, sizeof(serveraddress));
-      serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
-      serveraddress.sin_port = htons(PORT);
-      serveraddress.sin_family = AF_INET;
-
-      int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
-
-      if(bind_status == -1){
-        printf("Socket binding failed.!\n");
-        exit(1);
-      }
-
-      int connection_status = listen(fd, 5);
-
-      if(connection_status == -1) {
-        printf("Socket is unable to listen for new connections!\n");
-        exit(1);
-      } else {
-        printf("Server is listening for new connection: \n");
-      }
-
-      // fd_set active_fd_set, read_fd_set;
-      // FD_ZERO(&active_fd_set);
-      // FD_SET(fd, &active_fd_set);
-
-      int count = 0;
-      while(check_m1_received(&party, NUM_PARTIES) != 0) {
-        // read_fd_set = active_fd_set;
-        // if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
-        //     printf("Error with selec!\n");
-        //     exit(1);
-        // }
-        // for(int j = 0; j < FD_SETSIZE; ++j){
-        //   if(FD_ISSET (j, &read_fd_set)){
-        //     if(j == fd) {
-              int length = sizeof(client);
-              int new = accept(fd, (SA*)&client, &length);
-
-              if(new == -1){
-                printf("Server is unable to accept the data from client!\n");
-                exit(1);
-              }
-              printf("Connection from %s.\n", inet_ntoa(client.sin_addr));
-
-            //   FD_SET (new, &active_fd_set);
-            // } else {
-              // for (int i = 0; i < NUM_PARTIES; i++) {
-                // close(fd_3[2*i]);
-              // }
-              unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
-              read(new, m1_i, sizeof(m1_i));
-              printf("child received: ");
-              print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
-
-              char u_i[PID_LENGTH];
-              bzero(u_i, PID_LENGTH);
-              memcpy(u_i, m1_i, PID_LENGTH);
-              printf("u_i: %s\n", (char*) u_i);
-              int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
-              printf("index: %d\n", ind);
-              write(fd_3[1], m1_i, sizeof(m1_i));
-              bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
-              // close(j);
-              // FD_CLR(j, &active_fd_set);
-              // close(fd_3[1]);
-              count++;
-              printf("count: %d\n", count);
-              if(count == NUM_PARTIES - 1){
-                exit(0);
-              }
-          //   }
-          // }
-        // }
-      }
-      exit(0);
-    }
-  }
-
-  int status2, wpid2;
-  while ((wpid2 = wait(&status2)) > 0); // Wait to finish child processes
-
-  printf("Round 4\n");
-
-  // Round 4
-
-  unsigned char m2[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-  printf("pid%d: %s\n", index, (char*) party.pids[index]);
-  set_m2(&party, index, m2);
-  printf("m2: ");
-  print_key(m2, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
-
-  int pid_4, pid2_4;
-  int fd_4[2];
-
-  pipe(fd_4);
-
-  // for (int i = 0; i < NUM_PARTIES; i++) {
-  //   pipe(&fd_3[i]);
+  //
+  // if (pid_3 > 0) {
+  //   pid2_3 = fork();
+  //   if(pid2_3 > 0) {
+  //     printf("Parent\n");
+  //     for (int i = 0; i < NUM_PARTIES - 1; i++) {
+  //     // while(check_m1_received(&party, NUM_PARTIES) != 1) {
+  //       close(fd_3[1]);
+  //       unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
+  //       char u_i[PID_LENGTH];
+  //       read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+  //       printf("-----------------------------------\n");
+  //       printf("Read from parent: \n");
+  //       print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+  //       memcpy(u_i, m1_i, PID_LENGTH);
+  //       int index = get_index(ips, NUM_PARTIES, u_i);
+  //       printf("index: %d\n", index);
+  //       Commitment ci;
+  //       printf("Copy to party\n");
+  //       copy_commitment(m1_i + PID_LENGTH, &ci);
+  //       print_commitment(&ci);
+  //       party.commitments[index] = ci;
+  //       printf("-----------------------------------\n");
+  //     }
+  //     print_party(&party, 0, NUM_PARTIES, 10);
+  //     // }
+  //   } else if(pid2_3 == 0) {
+  //     printf("Server\n");
+  //     int fd = socket(AF_INET, SOCK_STREAM, 0);
+  //     if(fd == -1){
+  //       printf("Socket creation failed!\n");
+  //       exit(1);
+  //     } else {
+  //       printf("Socket fd: %d\n", fd);
+  //     }
+  //
+  //     int enable = 1;
+  //     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
+  //       printf("setsockopt(SO_REUSEADDR) failed!\n");
+  //       exit(1);
+  //     }
+  //     struct sockaddr_in serveraddress, client;
+  //
+  //     bzero(&serveraddress, sizeof(serveraddress));
+  //     serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
+  //     serveraddress.sin_port = htons(PORT);
+  //     serveraddress.sin_family = AF_INET;
+  //
+  //     int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
+  //
+  //     if(bind_status == -1){
+  //       printf("Socket binding failed.!\n");
+  //       exit(1);
+  //     }
+  //
+  //     int connection_status = listen(fd, 5);
+  //
+  //     if(connection_status == -1) {
+  //       printf("Socket is unable to listen for new connections!\n");
+  //       exit(1);
+  //     } else {
+  //       printf("Server is listening for new connection: \n");
+  //     }
+  //
+  //     // fd_set active_fd_set, read_fd_set;
+  //     // FD_ZERO(&active_fd_set);
+  //     // FD_SET(fd, &active_fd_set);
+  //
+  //     int count = 0;
+  //     while(check_m1_received(&party, NUM_PARTIES) != 0) {
+  //       // read_fd_set = active_fd_set;
+  //       // if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
+  //       //     printf("Error with selec!\n");
+  //       //     exit(1);
+  //       // }
+  //       // for(int j = 0; j < FD_SETSIZE; ++j){
+  //       //   if(FD_ISSET (j, &read_fd_set)){
+  //       //     if(j == fd) {
+  //             int length = sizeof(client);
+  //             int new = accept(fd, (SA*)&client, &length);
+  //
+  //             if(new == -1){
+  //               printf("Server is unable to accept the data from client!\n");
+  //               exit(1);
+  //             }
+  //             printf("Connection from %s.\n", inet_ntoa(client.sin_addr));
+  //
+  //           //   FD_SET (new, &active_fd_set);
+  //           // } else {
+  //             // for (int i = 0; i < NUM_PARTIES; i++) {
+  //               // close(fd_3[2*i]);
+  //             // }
+  //             unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
+  //             read(new, m1_i, sizeof(m1_i));
+  //             printf("child received: ");
+  //             print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+  //
+  //             char u_i[PID_LENGTH];
+  //             bzero(u_i, PID_LENGTH);
+  //             memcpy(u_i, m1_i, PID_LENGTH);
+  //             printf("u_i: %s\n", (char*) u_i);
+  //             int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
+  //             printf("index: %d\n", ind);
+  //             write(fd_3[1], m1_i, sizeof(m1_i));
+  //             bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+  //             // close(j);
+  //             // FD_CLR(j, &active_fd_set);
+  //             // close(fd_3[1]);
+  //             count++;
+  //             printf("count: %d\n", count);
+  //             if(count == NUM_PARTIES - 1){
+  //               exit(0);
+  //             }
+  //         //   }
+  //         // }
+  //       // }
+  //     }
+  //     exit(0);
+  //   }
   // }
-
-  pid_4 = fork();
-  if (pid_4 == 0) {
-    printf("Client\n");
-    for (int i = 0; i < NUM_PARTIES; i++) {
-      if(i != index) {
-        struct sockaddr_in serveraddress;
-
-        int fd = socket(AF_INET, SOCK_STREAM, 0);
-        if(fd == -1){
-          printf("Creation of Socket failed!\n");
-          exit(1);
-        }
-
-        bzero(&serveraddress, sizeof(serveraddress));
-        serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
-        serveraddress.sin_port = htons(PORT);
-        serveraddress.sin_family = AF_INET;
-
-        int connection;
-        do {
-          connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
-
-          if(connection == -1){
-            printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
-            sleep(3);
-          }
-        } while(connection == -1);
-
-        ssize_t bytes = write(fd, m2, sizeof(m2));
-
-        if(bytes > 0){
-          printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
-        }
-      }
-    }
-    exit(0);
-  }
-
-  if (pid_4 > 0) {
-    pid2_4 = fork();
-    if(pid2_4 > 0) {
-      printf("Parent\n");
-      for (int i = 0; i < NUM_PARTIES - 1; i++) {
-      // while(check_m1_received(&party, NUM_PARTIES) != 1) {
-        close(fd_4[1]);
-        unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-        char u_i[PID_LENGTH];
-        read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
-        printf("-----------------------------------\n");
-        printf("Read from parent (m2): \n");
-        print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
-        memcpy(u_i, m2_i, PID_LENGTH);
-        int index = get_index(ips, NUM_PARTIES, u_i);
-        printf("index: %d\n", index);
-        printf("Copy to party\n");
-        memcpy(party.xs[index], m2_i + PID_LENGTH, KEX_SSBYTES);
-        memcpy(party.coins[index], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTCOINSBYTES);
-        printf("-----------------------------------\n");
-      }
-      print_party(&party, 0, NUM_PARTIES, 10);
-      // }
-    } else if(pid2_4 == 0) {
-      printf("Server\n");
-      int fd = socket(AF_INET, SOCK_STREAM, 0);
-      if(fd == -1){
-        printf("Socket creation failed!\n");
-        exit(1);
-      } else {
-        printf("Socket fd: %d\n", fd);
-      }
-
-      int enable = 1;
-      if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-        printf("setsockopt(SO_REUSEADDR) failed!\n");
-        exit(1);
-      }
-      struct sockaddr_in serveraddress, client;
-
-      bzero(&serveraddress, sizeof(serveraddress));
-      serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
-      serveraddress.sin_port = htons(PORT);
-      serveraddress.sin_family = AF_INET;
-
-      int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
-
-      if(bind_status == -1){
-        printf("Socket binding failed.!\n");
-        exit(1);
-      }
-
-      int connection_status = listen(fd, 5);
-
-      if(connection_status == -1) {
-        printf("Socket is unable to listen for new connections!\n");
-        exit(1);
-      } else {
-        printf("Server is listening for new connection: \n");
-      }
-
-      // fd_set active_fd_set, read_fd_set;
-      // FD_ZERO(&active_fd_set);
-      // FD_SET(fd, &active_fd_set);
-
-      int count2 = 0;
-      while(check_m2_received(&party, NUM_PARTIES) != 0) {
-        // read_fd_set = active_fd_set;
-        // if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
-        //     printf("Error with selec!\n");
-        //     exit(1);
-        // }
-        // for(int j = 0; j < FD_SETSIZE; ++j){
-        //   if(FD_ISSET (j, &read_fd_set)){
-        //     if(j == fd) {
-              int length = sizeof(client);
-              int new = accept(fd, (SA*)&client, &length);
-
-              if(new == -1){
-                printf("Server is unable to accept the data from client!\n");
-                exit(1);
-              }
-              printf("Connection from %s.\n", inet_ntoa(client.sin_addr));
-
-            //   FD_SET (new, &active_fd_set);
-            // } else {
-              // for (int i = 0; i < NUM_PARTIES; i++) {
-                // close(fd_3[2*i]);
-              // }
-              unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-              read(new, m2_i, sizeof(m2_i));
-              printf("child received: ");
-              print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
-
-              char u_i[PID_LENGTH];
-              bzero(u_i, PID_LENGTH);
-              memcpy(u_i, m2_i, PID_LENGTH);
-              printf("u_i: %s\n", (char*) u_i);
-              int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
-              printf("index: %d\n", ind);
-              write(fd_4[1], m2_i, sizeof(m2_i));
-              bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
-              // close(j);
-              // FD_CLR(j, &active_fd_set);
-              // close(fd_3[1]);
-              count2++;
-              printf("count: %d\n", count2);
-              if(count2 == NUM_PARTIES - 1){
-                exit(0);
-              }
-          //   }
-          // }
-        // }
-      }
-      exit(0);
-    }
-  }
-
-  int status3, wpid3;
-  while ((wpid3 = wait(&status3)) > 0); // Wait to finish child processes
-
-  int res = check_xs_i(&party, NUM_PARTIES); // Check Xi
-  int result = check_commitments_i(&party, NUM_PARTIES); // Check commitments
-
-  if (res == 0) {
-    printf("Xi are zero!\n");
-  } else {
-    printf("\t\tXi are not zero!\n");
-    party.acc = 0;
-    party.term = 1;
-    // return 1;
-  }
-
-  if (result == 0) {
-    printf("\t\tCommitments are correct!\n");
-  } else {
-    printf("\t\tCommitments are not correct!\n");
-    party.acc = 0;
-    party.term = 1;
-    // return 1;
-  }
-
-  compute_masterkey_i(&party, NUM_PARTIES, index);
-  print_party(&party, 0, NUM_PARTIES, 10);
-
-  compute_sk_sid_i(&party, NUM_PARTIES);
-  print_party(&party, 0, NUM_PARTIES, 10);
-
-  char* emojified_key[4];
-
-  printf("\n\nsk: ");
-  emojify(party.sk, emojified_key);
-  print_emojified_key(emojified_key);
-
-  free(ips);
-  free(data);
+  //
+  // int status2, wpid2;
+  // while ((wpid2 = wait(&status2)) > 0); // Wait to finish child processes
+  //
+  // printf("Round 4\n");
+  //
+  // // Round 4
+  //
+  // unsigned char m2[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
+  // printf("pid%d: %s\n", index, (char*) party.pids[index]);
+  // set_m2(&party, index, m2);
+  // printf("m2: ");
+  // print_key(m2, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+  //
+  // int pid_4, pid2_4;
+  // int fd_4[2];
+  //
+  // pipe(fd_4);
+  //
+  // // for (int i = 0; i < NUM_PARTIES; i++) {
+  // //   pipe(&fd_3[i]);
+  // // }
+  //
+  // pid_4 = fork();
+  // if (pid_4 == 0) {
+  //   printf("Client\n");
+  //   for (int i = 0; i < NUM_PARTIES; i++) {
+  //     if(i != index) {
+  //       struct sockaddr_in serveraddress;
+  //
+  //       int fd = socket(AF_INET, SOCK_STREAM, 0);
+  //       if(fd == -1){
+  //         printf("Creation of Socket failed!\n");
+  //         exit(1);
+  //       }
+  //
+  //       bzero(&serveraddress, sizeof(serveraddress));
+  //       serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
+  //       serveraddress.sin_port = htons(PORT);
+  //       serveraddress.sin_family = AF_INET;
+  //
+  //       int connection;
+  //       do {
+  //         connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
+  //
+  //         if(connection == -1){
+  //           printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
+  //           sleep(3);
+  //         }
+  //       } while(connection == -1);
+  //
+  //       ssize_t bytes = write(fd, m2, sizeof(m2));
+  //
+  //       if(bytes > 0){
+  //         printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
+  //       }
+  //     }
+  //   }
+  //   exit(0);
+  // }
+  //
+  // if (pid_4 > 0) {
+  //   pid2_4 = fork();
+  //   if(pid2_4 > 0) {
+  //     printf("Parent\n");
+  //     for (int i = 0; i < NUM_PARTIES - 1; i++) {
+  //     // while(check_m1_received(&party, NUM_PARTIES) != 1) {
+  //       close(fd_4[1]);
+  //       unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
+  //       char u_i[PID_LENGTH];
+  //       read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+  //       printf("-----------------------------------\n");
+  //       printf("Read from parent (m2): \n");
+  //       print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+  //       memcpy(u_i, m2_i, PID_LENGTH);
+  //       int index = get_index(ips, NUM_PARTIES, u_i);
+  //       printf("index: %d\n", index);
+  //       printf("Copy to party\n");
+  //       memcpy(party.xs[index], m2_i + PID_LENGTH, KEX_SSBYTES);
+  //       memcpy(party.coins[index], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTCOINSBYTES);
+  //       printf("-----------------------------------\n");
+  //     }
+  //     print_party(&party, 0, NUM_PARTIES, 10);
+  //     // }
+  //   } else if(pid2_4 == 0) {
+  //     printf("Server\n");
+  //     int fd = socket(AF_INET, SOCK_STREAM, 0);
+  //     if(fd == -1){
+  //       printf("Socket creation failed!\n");
+  //       exit(1);
+  //     } else {
+  //       printf("Socket fd: %d\n", fd);
+  //     }
+  //
+  //     int enable = 1;
+  //     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
+  //       printf("setsockopt(SO_REUSEADDR) failed!\n");
+  //       exit(1);
+  //     }
+  //     struct sockaddr_in serveraddress, client;
+  //
+  //     bzero(&serveraddress, sizeof(serveraddress));
+  //     serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
+  //     serveraddress.sin_port = htons(PORT);
+  //     serveraddress.sin_family = AF_INET;
+  //
+  //     int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
+  //
+  //     if(bind_status == -1){
+  //       printf("Socket binding failed.!\n");
+  //       exit(1);
+  //     }
+  //
+  //     int connection_status = listen(fd, 5);
+  //
+  //     if(connection_status == -1) {
+  //       printf("Socket is unable to listen for new connections!\n");
+  //       exit(1);
+  //     } else {
+  //       printf("Server is listening for new connection: \n");
+  //     }
+  //
+  //     // fd_set active_fd_set, read_fd_set;
+  //     // FD_ZERO(&active_fd_set);
+  //     // FD_SET(fd, &active_fd_set);
+  //
+  //     int count2 = 0;
+  //     while(check_m2_received(&party, NUM_PARTIES) != 0) {
+  //       // read_fd_set = active_fd_set;
+  //       // if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
+  //       //     printf("Error with selec!\n");
+  //       //     exit(1);
+  //       // }
+  //       // for(int j = 0; j < FD_SETSIZE; ++j){
+  //       //   if(FD_ISSET (j, &read_fd_set)){
+  //       //     if(j == fd) {
+  //             int length = sizeof(client);
+  //             int new = accept(fd, (SA*)&client, &length);
+  //
+  //             if(new == -1){
+  //               printf("Server is unable to accept the data from client!\n");
+  //               exit(1);
+  //             }
+  //             printf("Connection from %s.\n", inet_ntoa(client.sin_addr));
+  //
+  //           //   FD_SET (new, &active_fd_set);
+  //           // } else {
+  //             // for (int i = 0; i < NUM_PARTIES; i++) {
+  //               // close(fd_3[2*i]);
+  //             // }
+  //             unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
+  //             read(new, m2_i, sizeof(m2_i));
+  //             printf("child received: ");
+  //             print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+  //
+  //             char u_i[PID_LENGTH];
+  //             bzero(u_i, PID_LENGTH);
+  //             memcpy(u_i, m2_i, PID_LENGTH);
+  //             printf("u_i: %s\n", (char*) u_i);
+  //             int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
+  //             printf("index: %d\n", ind);
+  //             write(fd_4[1], m2_i, sizeof(m2_i));
+  //             bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+  //             // close(j);
+  //             // FD_CLR(j, &active_fd_set);
+  //             // close(fd_3[1]);
+  //             count2++;
+  //             printf("count: %d\n", count2);
+  //             if(count2 == NUM_PARTIES - 1){
+  //               exit(0);
+  //             }
+  //         //   }
+  //         // }
+  //       // }
+  //     }
+  //     exit(0);
+  //   }
+  // }
+  //
+  // int status3, wpid3;
+  // while ((wpid3 = wait(&status3)) > 0); // Wait to finish child processes
+  //
+  // int res = check_xs_i(&party, NUM_PARTIES); // Check Xi
+  // int result = check_commitments_i(&party, NUM_PARTIES); // Check commitments
+  //
+  // if (res == 0) {
+  //   printf("Xi are zero!\n");
+  // } else {
+  //   printf("\t\tXi are not zero!\n");
+  //   party.acc = 0;
+  //   party.term = 1;
+  //   // return 1;
+  // }
+  //
+  // if (result == 0) {
+  //   printf("\t\tCommitments are correct!\n");
+  // } else {
+  //   printf("\t\tCommitments are not correct!\n");
+  //   party.acc = 0;
+  //   party.term = 1;
+  //   // return 1;
+  // }
+  //
+  // compute_masterkey_i(&party, NUM_PARTIES, index);
+  // print_party(&party, 0, NUM_PARTIES, 10);
+  //
+  // compute_sk_sid_i(&party, NUM_PARTIES);
+  // print_party(&party, 0, NUM_PARTIES, 10);
+  //
+  // char* emojified_key[4];
+  //
+  // printf("\n\nsk: ");
+  // emojify(party.sk, emojified_key);
+  // print_emojified_key(emojified_key);
+  //
+  // free(ips);
+  // free(data);
   return 0;
 }
