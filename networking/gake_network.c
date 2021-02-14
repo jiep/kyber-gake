@@ -599,7 +599,8 @@ int main(int argc, char* argv[]) {
                 // close(fd_3[2*i]);
               // }
               unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
-              read(new, m1_i, sizeof(m1_i));
+              read_n_bytes(new, PID_LENGTH + COMMITMENT_LENGTH, m1_i);
+              // read(new, m1_i, sizeof(m1_i));
               printf("child received: ");
               print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
 
