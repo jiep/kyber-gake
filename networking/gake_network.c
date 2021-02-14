@@ -377,17 +377,19 @@ int main(int argc, char* argv[]) {
   print_party(&party, 0, NUM_PARTIES, 10);
 
   unsigned char m1[PID_LENGTH + COMMITMENT_LENGTH];
-  printf("pid%d: %s", index, (char*) party.pids[index]);
+  printf("pid%d: %s\n", index, (char*) party.pids[index]);
   set_m1(&party, index, m1);
   printf("m1: ");
   print_key(m1, PID_LENGTH + COMMITMENT_LENGTH);
 
   int pid_3, pid2_3;
-  int fd_3[2*NUM_PARTIES];
+  int fd_3[2];
 
-  for (int i = 0; i < NUM_PARTIES; i++) {
-    pipe(&fd_3[i]);
-  }
+  pipe(fd_3);
+
+  // for (int i = 0; i < NUM_PARTIES; i++) {
+  //   pipe(&fd_3[i]);
+  // }
 
   pid_3 = fork();
   if (pid_3 == 0) {
@@ -398,7 +400,7 @@ int main(int argc, char* argv[]) {
 
         int fd = socket(AF_INET, SOCK_STREAM, 0);
         if(fd == -1){
-          printf("Creation of Socket failed.!\n");
+          printf("Creation of Socket failed!\n");
           exit(1);
         }
 
@@ -431,20 +433,27 @@ int main(int argc, char* argv[]) {
     pid2_3 = fork();
     if(pid2_3 > 0) {
       printf("Parent\n");
-      for (int i = 0; i < NUM_PARTIES; i++) {
-        close(fd_3[2*i + 1]);
+      for (int i = 0; i < NUM_PARTIES - 1; i++) {
+      // while(check_m1_received(&party, NUM_PARTIES) != 1) {
+        close(fd_3[1]);
         unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
         char u_i[PID_LENGTH];
-        read(fd_3[2*i], m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+        read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+        printf("-----------------------------------\n");
         printf("Read from parent: \n");
         print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
         memcpy(u_i, m1_i, PID_LENGTH);
         int index = get_index(ips, NUM_PARTIES, u_i);
+        printf("index: %d\n", index);
         Commitment ci;
+        printf("Copy to party\n");
         copy_commitment(m1_i + PID_LENGTH, &ci);
+        print_commitment(&ci);
         party.commitments[index] = ci;
-        print_party(&party, 0, NUM_PARTIES, 10);
+        printf("-----------------------------------\n");
       }
+      print_party(&party, 0, NUM_PARTIES, 10);
+      // }
     } else if(pid2_3 == 0) {
       printf("Server\n");
       int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -483,19 +492,20 @@ int main(int argc, char* argv[]) {
         printf("Server is listening for new connection: \n");
       }
 
-      fd_set active_fd_set, read_fd_set;
-      FD_ZERO (&active_fd_set);
-      FD_SET (fd, &active_fd_set);
+      // fd_set active_fd_set, read_fd_set;
+      // FD_ZERO(&active_fd_set);
+      // FD_SET(fd, &active_fd_set);
 
+      int count = 0;
       while(check_m1_received(&party, NUM_PARTIES) != 0) {
-        read_fd_set = active_fd_set;
-        if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
-            printf("Error with selec!\n");
-            exit(1);
-        }
-        for(int j = 0; j < FD_SETSIZE; ++j){
-          if(FD_ISSET (j, &read_fd_set)){
-            if(j == fd) {
+        // read_fd_set = active_fd_set;
+        // if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
+        //     printf("Error with selec!\n");
+        //     exit(1);
+        // }
+        // for(int j = 0; j < FD_SETSIZE; ++j){
+        //   if(FD_ISSET (j, &read_fd_set)){
+        //     if(j == fd) {
               int length = sizeof(client);
               int new = accept(fd, (SA*)&client, &length);
 
@@ -504,37 +514,46 @@ int main(int argc, char* argv[]) {
                 exit(1);
               }
               printf("Connection from %s.\n", inet_ntoa(client.sin_addr));
-              FD_SET (new, &active_fd_set);
-            } else {
-              for (int i = 0; i < NUM_PARTIES; i++) {
-                close(fd_3[2*i]);
-              }
+
+            //   FD_SET (new, &active_fd_set);
+            // } else {
+              // for (int i = 0; i < NUM_PARTIES; i++) {
+                // close(fd_3[2*i]);
+              // }
               unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
-              read(j, m1_i, sizeof(m1_i));
+              read(new, m1_i, sizeof(m1_i));
               printf("child received: ");
-              print_short_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH, 10);
+              print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
 
               char u_i[PID_LENGTH];
+              bzero(u_i, PID_LENGTH);
               memcpy(u_i, m1_i, PID_LENGTH);
-              printf("u_i: %s\n", u_i);
-              int ind = get_index(ips, NUM_PARTIES, u_i);
+              printf("u_i: %s\n", (char*) u_i);
+              int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
               printf("index: %d\n", ind);
-              ind = 0;
-              write(fd_3[2*ind + 1], m1_i, sizeof(m1_i));
-              close(fd_3[2*ind + 1]);
-              close(j);
-              FD_CLR(j, &active_fd_set);
-            }
-          }
-        }
+              write(fd_3[1], m1_i, sizeof(m1_i));
+              bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+              // close(j);
+              // FD_CLR(j, &active_fd_set);
+              // close(fd_3[1]);
+              count++;
+              printf("count: %d\n", count);
+              if(count == NUM_PARTIES - 1){
+                exit(0);
+              }
+          //   }
+          // }
+        // }
       }
       exit(0);
     }
   }
 
-  while ((wpid = wait(&status)) > 0); // Wait to finish child processes
+  int status2, wpid2;
+  while ((wpid2 = wait(&status2)) > 0); // Wait to finish child processes
 
   // Todo: broadcast M^1_i
+  printf("Round 4\n");
 
   // Round 4
 
