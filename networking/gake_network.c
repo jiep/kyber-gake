@@ -129,6 +129,26 @@ int check_m1_received(Party* party, int num_parties) {
   return 0;
 }
 
+int is_zero_xs_coins(X* xs, Coins* coins) {
+  unsigned char zero[COMMITMENTCOINSBYTES];
+  init_to_zero(zero, COMMITMENTCOINSBYTES);
+
+  if(memcmp(xs, zero, KEX_SSBYTES) != 0 ||
+     memcmp(coins, zero, COMMITMENTCOINSBYTES) != 0) {
+       return 1;
+  }
+  return 0;
+}
+
+int check_m2_received(Party* party, int num_parties) {
+  for (int i = 0; i < num_parties; i++) {
+    if(is_zero_xs_coins(&party->xs[i], &party->coins[i])){
+      return 1;
+    }
+  }
+  return 0;
+}
+
 int main(int argc, char* argv[]) {
 
   if (argc != 5) {
@@ -560,7 +580,7 @@ int main(int argc, char* argv[]) {
   unsigned char m2[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
   printf("pid%d: %s\n", index, (char*) party.pids[index]);
   set_m2(&party, index, m2);
-  printf("m1: ");
+  printf("m2: ");
   print_key(m2, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
 
   int pid_4, pid2_4;
@@ -621,7 +641,7 @@ int main(int argc, char* argv[]) {
         char u_i[PID_LENGTH];
         read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
         printf("-----------------------------------\n");
-        printf("Read from parent: \n");
+        printf("Read from parent (m2): \n");
         print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
         memcpy(u_i, m2_i, PID_LENGTH);
         int index = get_index(ips, NUM_PARTIES, u_i);
@@ -675,8 +695,8 @@ int main(int argc, char* argv[]) {
       // FD_ZERO(&active_fd_set);
       // FD_SET(fd, &active_fd_set);
 
-      int count = 0;
-      while(check_m1_received(&party, NUM_PARTIES) != 0) {
+      int count2 = 0;
+      while(check_m2_received(&party, NUM_PARTIES) != 0) {
         // read_fd_set = active_fd_set;
         // if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
         //     printf("Error with selec!\n");
@@ -710,14 +730,14 @@ int main(int argc, char* argv[]) {
               printf("u_i: %s\n", (char*) u_i);
               int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
               printf("index: %d\n", ind);
-              write(fd_3[1], m2_i, sizeof(m2_i));
+              write(fd_4[1], m2_i, sizeof(m2_i));
               bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
               // close(j);
               // FD_CLR(j, &active_fd_set);
               // close(fd_3[1]);
-              count++;
-              printf("count: %d\n", count);
-              if(count == NUM_PARTIES - 1){
+              count2++;
+              printf("count: %d\n", count2);
+              if(count2 == NUM_PARTIES - 1){
                 exit(0);
               }
           //   }
