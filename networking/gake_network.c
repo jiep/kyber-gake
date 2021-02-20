@@ -212,6 +212,21 @@ int main(int argc, char* argv[]) {
     exit(1);
   }
 
+  if(!file_exists(argv[1])) {
+    printf("File %s does not exist!\n", argv[1]);
+    exit(1);
+  }
+
+  if(!file_exists(argv[2])) {
+    printf("File %s does not exist!\n", argv[2]);
+    exit(1);
+  }
+
+  if(!file_exists(argv[3])) {
+    printf("File %s does not exist!\n", argv[3]);
+    exit(1);
+  }
+
   int NUM_PARTIES = count_lines(argv[3]);
   printf("IPs read: %d\n", NUM_PARTIES);
 

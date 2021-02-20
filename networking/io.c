@@ -197,3 +197,12 @@ int get_index(ip_t* ips, int length, char* ip) {
   }
   return -1;
 }
+
+int file_exists(char* filename) {
+  FILE *file;
+  if((file = fopen(filename, "rb"))) {
+    fclose(file);
+    return 1;
+  }
+  return 0;
+}

@@ -28,3 +28,4 @@ int read_ips(char* filename, ip_t* ips);
 int write_ca_info(ca_public* pps, int num_parties, char* outfile);
 int count_lines(char* filename);
 int get_index(ip_t* ips, int length, char* ip);
+int file_exists(char* filename);
