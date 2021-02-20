@@ -255,7 +255,6 @@ int main(int argc, char* argv[]) {
   }
 
   int NUM_PARTIES = count_lines(argv[3]);
-  printf("IPs read: %d\n", NUM_PARTIES);
 
   keys_t keys;
   ca_public* data = (ca_public*) malloc(NUM_PARTIES*sizeof(ca_public));
@@ -269,55 +268,21 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  printf("ind: %d\n", index);
-
   read_keys(argv[1], &keys);
-  printf("pk: ");
-  print_short_key(keys.public_key, CRYPTO_PUBLICKEYBYTES, 10);
-  printf("sk: ");
-  print_short_key(keys.secret_key, CRYPTO_SECRETKEYBYTES, 10);
 
   read_ca_data(argv[2], NUM_PARTIES, data);
-
-  printf("Reading CA data...\n");
-  printf("---------------------------------------------------\n");
-  for (int i = 0; i < NUM_PARTIES; i++) {
-    char ip_str[17];
-    ip_to_str(data[i].ip, ip_str);
-    printf("ip: %s\n", ip_str);
-    printf("pk: ");
-    print_short_key(data[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
-    printf("---------------------------------------------------\n");
-  }
 
   Party party;
 
   init_party(&party, NUM_PARTIES, ips, &keys);
-  print_party(&party, 0, NUM_PARTIES, 10);
 
   int left = mod(index - 1, NUM_PARTIES);
   int right = mod(index + 1, NUM_PARTIES);
-  printf("left: %s\n", (char*) party.pids[left]);
-  printf("right: %s\n", (char*) party.pids[right]);
 
   unsigned char pk_left[CRYPTO_PUBLICKEYBYTES];
   unsigned char pk_right[CRYPTO_PUBLICKEYBYTES];
   get_pk((char*) party.pids[left], pk_left, data, NUM_PARTIES);
   get_pk((char*) party.pids[right], pk_right, data, NUM_PARTIES);
-
-  printf("pk (l): ");
-  print_short_key(pk_left, CRYPTO_PUBLICKEYBYTES, 10);
-
-  printf("pk (r): ");
-  print_short_key(pk_right, CRYPTO_PUBLICKEYBYTES, 10);
-
-  // start_server(party.public_key, party.secret_key, pk_left, party.key_left);
-  // print_party(&party, 0, NUM_PARTIES, 10);
-
-  // start_client(party.public_key, party.secret_key, pk_right, (char*) party.pids[right], party.key_left);
-
-  printf("left: %s\n", (char*) party.pids[left]);
-  printf("right: %s\n", (char*) party.pids[right]);
 
   int pi_d, pid;
   int fd1[2], fd2[2];
@@ -326,24 +291,24 @@ int main(int argc, char* argv[]) {
   if(pipe(fd2)){};
 
   // Round 1-2
+  printf("Round 1-2\n");
   pi_d = fork();
   if(pi_d == 0){
-    printf("Child Process B:\n\tpid:%d\n\tppid:%d\n",getpid(),getppid());
 
     struct sockaddr_in serveraddress, client;
     socklen_t length;
     int connection, bind_status, connection_status;
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if(fd == -1){
-      printf("Socket creation failed!\n");
+      printf("\tSocket creation failed!\n");
       exit(1);
     } else {
-      printf("Socket fd: %d\n", fd);
+      printf("\tSocket fd: %d\n", fd);
     }
 
     int enable = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-      printf("setsockopt(SO_REUSEADDR) failed!\n");
+      printf("\tsetsockopt(SO_REUSEADDR) failed!\n");
       exit(1);
     }
 
@@ -355,54 +320,41 @@ int main(int argc, char* argv[]) {
     bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
 
     if(bind_status == -1){
-      printf("Socket binding failed.!\n");
+      printf("\tSocket binding failed.!\n");
       exit(1);
     }
 
     connection_status = listen(fd, 5);
 
     if(connection_status == -1) {
-      printf("Socket is unable to listen for new connections!\n");
+      printf("\tSocket is unable to listen for new connections!\n");
       exit(1);
     } else {
-      printf("Server is listening for new connection: \n");
+      printf("\tServer is listening for new connection: \n");
     }
 
     length = sizeof(client);
     connection = accept(fd, (SA*)&client, &length);
 
     if(connection == -1){
-      printf("Server is unable to accept the data from client!\n");
+      printf("\tServer is unable to accept the data from client!\n");
       exit(1);
     }
 
     unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
     unsigned char ake_senda[KEX_AKE_SENDABYTES];
 
-    // bzero(ake_senda, sizeof(ake_senda));
-    // bzero(party.key_left, sizeof(party.key_left));
-
     int bytes = 0;
 
-    // int b;
     read_n_bytes(connection, KEX_AKE_SENDABYTES, ake_senda);
-    // b = read(connection, ake_senda, sizeof(ake_senda));
-    // printf("Read from child: KEX_AKE_SENDABYTES: %d\n", b, KEX_AKE_SENDABYTES);
-    printf("[C] ake_senda: ");
-    print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
 
     kex_ake_sharedB(ake_sendb, party.key_left, ake_senda, party.secret_key, pk_left);
-    printf("[C] ake_sendb (%ld):", sizeof(ake_sendb));
-    print_short_key(ake_sendb, KEX_AKE_SENDBBYTES, 10);
 
     // Send second message
     bytes = write(connection, ake_sendb, sizeof(ake_sendb));
     if(bytes == KEX_AKE_SENDBBYTES){
-      printf("Data sent successfully!\n");
+      printf("\tData sent successfully!\n");
     }
-
-    printf("[S] key (l): ");
-    print_key(party.key_left, KEX_SSBYTES);
 
     if(write(fd1[1], party.key_left, sizeof(party.key_left))){};
     close(fd1[1]);
@@ -413,29 +365,21 @@ int main(int argc, char* argv[]) {
   if(pi_d > 0){
     pid = fork();
     if(pid > 0){
-      printf("\nParent Process:\n\tpid:%d\n\tppid :%d\n",getpid(),getppid());
       close(fd1[1]);
       close(fd2[1]);
       if(read(fd1[0], party.key_left, sizeof(party.key_left))){};
-      printf("key (l): ");
-      print_key(party.key_left, KEX_SSBYTES);
 
       if(read(fd2[0], party.key_right, sizeof(party.key_right))){};
-      printf("key (r): ");
-      print_key(party.key_right, KEX_SSBYTES);
 
-      print_party(&party, 0, NUM_PARTIES, 10);
       close(fd1[0]);
       close(fd2[0]);
     }
     else if(pid == 0){
-      printf("Child Process A:\n\tpid:%d\n\tppid:%d\n",getpid(),getppid());
-
       struct sockaddr_in serveraddress;
 
       int fd = socket(AF_INET, SOCK_STREAM, 0);
       if(fd == -1){
-        printf("Creation of Socket failed.!\n");
+        printf("\tCreation of socket failed.!\n");
         exit(1);
       }
 
@@ -449,7 +393,7 @@ int main(int argc, char* argv[]) {
         connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
 
         if(connection == -1){
-          printf("Waiting for the server %s to be ready...\n", (char*) party.pids[right]);
+          printf("\tWaiting for the server %s to be ready...\n", (char*) party.pids[right]);
           sleep(3);
         }
       } while(connection == -1);
@@ -460,28 +404,20 @@ int main(int argc, char* argv[]) {
       unsigned char tk[KEX_SSBYTES];
 
       kex_ake_initA(ake_senda, tk, eska, pk_right);
-      printf("[C] ake_senda (%ld):", sizeof(ake_senda));
-      print_short_key(ake_senda, KEX_AKE_SENDABYTES, 10);
 
       ssize_t bytes = 0;
 
       bytes = write(fd, ake_senda, sizeof(ake_senda));
 
       if(bytes == KEX_AKE_SENDABYTES){
-        printf("Data sent successfully!\n");
+        printf("\tData sent successfully!\n");
       }
       read_n_bytes(fd, KEX_AKE_SENDBBYTES, ake_sendb);
 
-      printf("[S] ake_sendb: ");
-      print_short_key(ake_sendb, KEX_AKE_SENDBBYTES, 10);
-
       kex_ake_sharedA(party.key_right, ake_sendb, tk, eska, party.secret_key);
-      printf("[C] key: ");
-      print_key(party.key_right, KEX_SSBYTES);
 
       if(write(fd2[1], &party.key_right, sizeof(party.key_right))){};
       close(fd2[1]);
-      // close(fd);
       exit(0);
     }
   }
@@ -498,30 +434,22 @@ int main(int argc, char* argv[]) {
   print_party(&party, 0, NUM_PARTIES, 10);
 
   unsigned char m1[PID_LENGTH + COMMITMENT_LENGTH];
-  printf("pid%d: %s\n", index, (char*) party.pids[index]);
   set_m1(&party, index, m1);
-  printf("m1: ");
-  print_key(m1, PID_LENGTH + COMMITMENT_LENGTH);
 
   int pid_3, pid2_3;
   int fd_3[2];
 
   if(pipe(fd_3)){};
 
-  // for (int i = 0; i < NUM_PARTIES; i++) {
-  //   pipe(&fd_3[i]);
-  // }
-
   pid_3 = fork();
   if (pid_3 == 0) {
-    printf("Client\n");
     for (int i = 0; i < NUM_PARTIES; i++) {
       if(i != index) {
         struct sockaddr_in serveraddress;
 
         int fd = socket(AF_INET, SOCK_STREAM, 0);
         if(fd == -1){
-          printf("Creation of Socket failed!\n");
+          printf("\tCreation of socket failed!\n");
           exit(1);
         }
 
@@ -535,7 +463,7 @@ int main(int argc, char* argv[]) {
           connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
 
           if(connection == -1){
-            printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
+            printf("\tWaiting for the server %s to be ready...\n", (char*) party.pids[i]);
             sleep(3);
           }
         } while(connection == -1);
@@ -543,7 +471,7 @@ int main(int argc, char* argv[]) {
         ssize_t bytes = write(fd, m1, sizeof(m1));
 
         if(bytes > 0){
-          printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
+          printf("\tSent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
         }
       }
     }
@@ -553,41 +481,29 @@ int main(int argc, char* argv[]) {
   if (pid_3 > 0) {
     pid2_3 = fork();
     if(pid2_3 > 0) {
-      printf("Parent\n");
       for (int i = 0; i < NUM_PARTIES - 1; i++) {
-      // while(check_m1_received(&party, NUM_PARTIES) != 1) {
         close(fd_3[1]);
         unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
         char u_i[PID_LENGTH];
         if(read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_LENGTH)){};
-        printf("-----------------------------------\n");
-        printf("Read from parent: \n");
-        print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
         memcpy(u_i, m1_i, PID_LENGTH);
         int ind2 = get_index(ips, NUM_PARTIES, u_i);
-        printf("ind2: %d\n", ind2);
         Commitment ci;
-        printf("Copy to party\n");
         copy_commitment(m1_i + PID_LENGTH, &ci);
-        print_commitment(&ci);
         party.commitments[ind2] = ci;
-        printf("-----------------------------------\n");
       }
-      print_party(&party, 0, NUM_PARTIES, 10);
-      // }
     } else if(pid2_3 == 0) {
-      printf("Server\n");
       int fd = socket(AF_INET, SOCK_STREAM, 0);
       if(fd == -1){
-        printf("Socket creation failed!\n");
+        printf("\tSocket creation failed!\n");
         exit(1);
       } else {
-        printf("Socket fd: %d\n", fd);
+        printf("\tSocket fd: %d\n", fd);
       }
 
       int enable = 1;
       if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-        printf("setsockopt(SO_REUSEADDR) failed!\n");
+        printf("\tsetsockopt(SO_REUSEADDR) failed!\n");
         exit(1);
       }
       struct sockaddr_in serveraddress, client;
@@ -600,72 +516,43 @@ int main(int argc, char* argv[]) {
       int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
 
       if(bind_status == -1){
-        printf("Socket binding failed.!\n");
+        printf("\tSocket binding failed.!\n");
         exit(1);
       }
 
       int connection_status = listen(fd, 5);
 
       if(connection_status == -1) {
-        printf("Socket is unable to listen for new connections!\n");
+        printf("\tSocket is unable to listen for new connections!\n");
         exit(1);
       } else {
-        printf("Server is listening for new connection: \n");
+        printf("\tServer is listening for new connection: \n");
       }
-
-      // fd_set active_fd_set, read_fd_set;
-      // FD_ZERO(&active_fd_set);
-      // FD_SET(fd, &active_fd_set);
 
       int count = 0;
       while(check_m1_received(&party, NUM_PARTIES) != 0) {
-        // read_fd_set = active_fd_set;
-        // if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
-        //     printf("Error with selec!\n");
-        //     exit(1);
-        // }
-        // for(int j = 0; j < FD_SETSIZE; ++j){
-        //   if(FD_ISSET (j, &read_fd_set)){
-        //     if(j == fd) {
-              socklen_t length = sizeof(client);
-              int new = accept(fd, (SA*)&client, &length);
 
-              if(new == -1){
-                printf("Server is unable to accept the data from client!\n");
-                exit(1);
-              }
-              printf("Connection from %s.\n", inet_ntoa(client.sin_addr));
+        socklen_t length = sizeof(client);
+        int new = accept(fd, (SA*)&client, &length);
 
-            //   FD_SET (new, &active_fd_set);
-            // } else {
-              // for (int i = 0; i < NUM_PARTIES; i++) {
-                // close(fd_3[2*i]);
-              // }
-              unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
-              read_n_bytes(new, PID_LENGTH + COMMITMENT_LENGTH, m1_i);
-              // read(new, m1_i, sizeof(m1_i));
-              printf("child received: ");
-              print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+        if(new == -1){
+          printf("\tServer is unable to accept the data from client!\n");
+          exit(1);
+        }
+        printf("\tConnection from %s.\n", inet_ntoa(client.sin_addr));
 
-              char u_i[PID_LENGTH];
-              bzero(u_i, PID_LENGTH);
-              memcpy(u_i, m1_i, PID_LENGTH);
-              printf("u_i: %s\n", (char*) u_i);
-              int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
-              printf("index: %d\n", ind);
-              if(write(fd_3[1], m1_i, sizeof(m1_i))){};
-              bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
-              // close(j);
-              // FD_CLR(j, &active_fd_set);
-              // close(fd_3[1]);
-              count++;
-              printf("count: %d\n", count);
-              if(count == NUM_PARTIES - 1){
-                exit(0);
-              }
-          //   }
-          // }
-        // }
+        unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
+        read_n_bytes(new, PID_LENGTH + COMMITMENT_LENGTH, m1_i);
+
+        char u_i[PID_LENGTH];
+        bzero(u_i, PID_LENGTH);
+        memcpy(u_i, m1_i, PID_LENGTH);
+        if(write(fd_3[1], m1_i, sizeof(m1_i))){};
+        bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+        count++;
+        if(count == NUM_PARTIES - 1){
+          exit(0);
+        }
       }
       exit(0);
     }
@@ -674,35 +561,28 @@ int main(int argc, char* argv[]) {
   int status2, wpid2;
   while ((wpid2 = wait(&status2)) > 0); // Wait to finish child processes
 
-  printf("Round 4\n");
+  print_party(&party, 0, NUM_PARTIES, 10);
 
   // Round 4
+  printf("Round 4\n");
 
   unsigned char m2[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-  printf("pid%d: %s\n", index, (char*) party.pids[index]);
   set_m2(&party, index, m2);
-  printf("m2: ");
-  print_key(m2, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
 
   int pid_4, pid2_4;
   int fd_4[2];
 
   if(pipe(fd_4)){};
 
-  // for (int i = 0; i < NUM_PARTIES; i++) {
-  //   pipe(&fd_3[i]);
-  // }
-
   pid_4 = fork();
   if (pid_4 == 0) {
-    printf("Client\n");
     for (int i = 0; i < NUM_PARTIES; i++) {
       if(i != index) {
         struct sockaddr_in serveraddress;
 
         int fd = socket(AF_INET, SOCK_STREAM, 0);
         if(fd == -1){
-          printf("Creation of Socket failed!\n");
+          printf("\tCreation of Socket failed!\n");
           exit(1);
         }
 
@@ -716,7 +596,7 @@ int main(int argc, char* argv[]) {
           connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
 
           if(connection == -1){
-            printf("Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
+            printf("\tWaiting for the server %s to be ready...\n", (char*) party.pids[i]);
             sleep(3);
           }
         } while(connection == -1);
@@ -724,7 +604,7 @@ int main(int argc, char* argv[]) {
         ssize_t bytes = write(fd, m2, sizeof(m2));
 
         if(bytes > 0){
-          printf("Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
+          printf("\tSent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
         }
       }
     }
@@ -734,39 +614,28 @@ int main(int argc, char* argv[]) {
   if (pid_4 > 0) {
     pid2_4 = fork();
     if(pid2_4 > 0) {
-      printf("Parent\n");
       for (int i = 0; i < NUM_PARTIES - 1; i++) {
-      // while(check_m1_received(&party, NUM_PARTIES) != 1) {
         close(fd_4[1]);
         unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
         char u_i[PID_LENGTH];
         if(read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES)){};
-        printf("-----------------------------------\n");
-        printf("Read from parent (m2): \n");
-        print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
         memcpy(u_i, m2_i, PID_LENGTH);
         int ind = get_index(ips, NUM_PARTIES, u_i);
-        printf("ind: %d\n", ind);
-        printf("Copy to party\n");
         memcpy(party.xs[ind], m2_i + PID_LENGTH, KEX_SSBYTES);
         memcpy(party.coins[ind], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTCOINSBYTES);
-        printf("-----------------------------------\n");
       }
-      print_party(&party, 0, NUM_PARTIES, 10);
-      // }
     } else if(pid2_4 == 0) {
-      printf("Server\n");
       int fd = socket(AF_INET, SOCK_STREAM, 0);
       if(fd == -1){
-        printf("Socket creation failed!\n");
+        printf("\tSocket creation failed!\n");
         exit(1);
       } else {
-        printf("Socket fd: %d\n", fd);
+        printf("\tSocket fd: %d\n", fd);
       }
 
       int enable = 1;
       if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-        printf("setsockopt(SO_REUSEADDR) failed!\n");
+        printf("\tsetsockopt(SO_REUSEADDR) failed!\n");
         exit(1);
       }
       struct sockaddr_in serveraddress, client;
@@ -779,71 +648,43 @@ int main(int argc, char* argv[]) {
       int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
 
       if(bind_status == -1){
-        printf("Socket binding failed.!\n");
+        printf("\tSocket binding failed.!\n");
         exit(1);
       }
 
       int connection_status = listen(fd, 5);
 
       if(connection_status == -1) {
-        printf("Socket is unable to listen for new connections!\n");
+        printf("\tSocket is unable to listen for new connections!\n");
         exit(1);
       } else {
-        printf("Server is listening for new connection: \n");
+        printf("\tServer is listening for new connection: \n");
       }
-
-      // fd_set active_fd_set, read_fd_set;
-      // FD_ZERO(&active_fd_set);
-      // FD_SET(fd, &active_fd_set);
 
       int count2 = 0;
       while(check_m2_received(&party, NUM_PARTIES) != 0) {
-        // read_fd_set = active_fd_set;
-        // if(select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
-        //     printf("Error with selec!\n");
-        //     exit(1);
-        // }
-        // for(int j = 0; j < FD_SETSIZE; ++j){
-        //   if(FD_ISSET (j, &read_fd_set)){
-        //     if(j == fd) {
-              socklen_t length = sizeof(client);
-              int new = accept(fd, (SA*)&client, &length);
 
-              if(new == -1){
-                printf("Server is unable to accept the data from client!\n");
-                exit(1);
-              }
-              printf("Connection from %s.\n", inet_ntoa(client.sin_addr));
+        socklen_t length = sizeof(client);
+        int new = accept(fd, (SA*)&client, &length);
 
-            //   FD_SET (new, &active_fd_set);
-            // } else {
-              // for (int i = 0; i < NUM_PARTIES; i++) {
-                // close(fd_3[2*i]);
-              // }
-              unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-              if(read(new, m2_i, sizeof(m2_i))){};
-              printf("child received: ");
-              print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+        if(new == -1){
+          printf("\tServer is unable to accept the data from client!\n");
+          exit(1);
+        }
+        printf("\tConnection from %s.\n", inet_ntoa(client.sin_addr));
 
-              char u_i[PID_LENGTH];
-              bzero(u_i, PID_LENGTH);
-              memcpy(u_i, m2_i, PID_LENGTH);
-              printf("u_i: %s\n", (char*) u_i);
-              int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
-              printf("index: %d\n", ind);
-              if(write(fd_4[1], m2_i, sizeof(m2_i))){};
-              bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
-              // close(j);
-              // FD_CLR(j, &active_fd_set);
-              // close(fd_3[1]);
-              count2++;
-              printf("count: %d\n", count2);
-              if(count2 == NUM_PARTIES - 1){
-                exit(0);
-              }
-          //   }
-          // }
-        // }
+        unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
+        if(read(new, m2_i, sizeof(m2_i))){};
+
+        char u_i[PID_LENGTH];
+        bzero(u_i, PID_LENGTH);
+        memcpy(u_i, m2_i, PID_LENGTH);
+        if(write(fd_4[1], m2_i, sizeof(m2_i))){};
+        bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+        count2++;
+        if(count2 == NUM_PARTIES - 1){
+          exit(0);
+        }
       }
       exit(0);
     }
@@ -856,26 +697,24 @@ int main(int argc, char* argv[]) {
   int result = check_commitments_i(&party, NUM_PARTIES, data); // Check commitments
 
   if (res == 0) {
-    printf("\t\tXi are zero!\n");
+    printf("\tXi are zero!\n");
   } else {
-    printf("\t\tXi are not zero!\n");
+    printf("\tXi are not zero!\n");
     party.acc = 0;
     party.term = 1;
     return 1;
   }
 
   if (result == 0) {
-    printf("\t\tCommitments are correct!\n");
+    printf("\tCommitments are correct!\n");
   } else {
-    printf("\t\tCommitments are not correct!\n");
+    printf("\tCommitments are not correct!\n");
     party.acc = 0;
     party.term = 1;
     return 1;
   }
 
   compute_masterkey_i(&party, NUM_PARTIES, index);
-  print_party(&party, 0, NUM_PARTIES, 10);
-
   compute_sk_sid_i(&party, NUM_PARTIES);
   print_party(&party, 0, NUM_PARTIES, 10);
 
