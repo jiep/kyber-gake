@@ -20,6 +20,7 @@ set(COMMITMENT_QROM_FILES ${SRCS_QROM} commitment_qrom.c indcca_qrom.c kem_qrom.
 set(KEX_QROM_SRCS ${SRCS_QROM} utils.c indcpa.c kex_qrom.c randombytes.c test_kex_qrom.c)
 set(GAKE_QROM_FILES ${SRCS_QROM} kem.c gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom.c)
 set(GAKE_QROM_SPEED_FILES ${SRCS_QROM} kem.c gake_qrom.c kex_qrom.c commitment_qrom.c indcca_qrom.c kem_qrom.c aes256gcm.c kex.c randombytes.c utils.c test_gake_qrom_speed.c)
+set(GAKE_NETWOK_FILES ${SRCS} gake_network.c emoji.c utils.c io.c gake.c aes256gcm.c gake.c commitment.c indcca.c kem_det.c aes256gcm.c kex.c randombytes.c utils.c)
 
 set(KYBER_FIPS202_SRCS ${KYBER_SRCS} symmetric-shake.c)
 set(KYBER_QROM_FIPS202_SRCS ${KYBER_QROM_SRCS} symmetric-shake.c)
@@ -81,6 +82,7 @@ target_link_libraries(kyber_qrom512_avx2 INTERFACE fips202_avx2)
 
 add_executable(test_gake512_avx2 ${GAKE_FILES})
 add_executable(test_gake_qrom512_avx2 ${GAKE_QROM_FILES})
+add_executable(gake_network512_avx2 ${GAKE_NETWOK_FILES})
 add_executable(test_gake_speed512_avx2 ${GAKE_SPEED_FILES})
 add_executable(test_gake_qrom_speed512_avx2 ${GAKE_QROM_SPEED_FILES})
 
@@ -88,7 +90,9 @@ target_include_directories(test_gake512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 target_include_directories(test_gake_qrom512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 target_include_directories(test_gake_speed512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 target_include_directories(test_gake_qrom_speed512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(gake_network512_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 
+target_link_libraries(gake_network512_avx2 kyber512_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake512_avx2 kyber512_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_qrom512_avx2 kyber_qrom512_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_speed512_avx2 kyber512_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
@@ -105,6 +109,7 @@ target_link_libraries(kyber_qrom768_avx2 INTERFACE fips202_avx2)
 
 add_executable(test_gake768_avx2 ${GAKE_FILES})
 add_executable(test_gake_qrom768_avx2 ${GAKE_QROM_FILES})
+add_executable(gake_network768_avx2 ${GAKE_NETWOK_FILES})
 add_executable(test_gake_speed768_avx2 ${GAKE_SPEED_FILES})
 add_executable(test_gake_qrom_speed768_avx2 ${GAKE_QROM_SPEED_FILES})
 
@@ -112,7 +117,9 @@ target_include_directories(test_gake768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 target_include_directories(test_gake_qrom768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 target_include_directories(test_gake_speed768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 target_include_directories(test_gake_qrom_speed768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(gake_network768_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 
+target_link_libraries(gake_network768_avx2 kyber768_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake768_avx2 kyber768_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_qrom768_avx2 kyber_qrom768_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_speed768_avx2 kyber768_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
@@ -130,6 +137,7 @@ target_link_libraries(kyber_qrom1024_avx2 INTERFACE fips202_avx2)
 
 add_executable(test_gake1024_avx2 ${GAKE_FILES})
 add_executable(test_gake_qrom1024_avx2 ${GAKE_QROM_FILES})
+add_executable(gake_network1024_avx2 ${GAKE_NETWOK_FILES})
 add_executable(test_gake_speed1024_avx2 ${GAKE_SPEED_FILES})
 add_executable(test_gake_qrom_speed1024_avx2 ${GAKE_QROM_SPEED_FILES})
 
@@ -137,7 +145,9 @@ target_include_directories(test_gake1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2
 target_include_directories(test_gake_qrom1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 target_include_directories(test_gake_speed1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 target_include_directories(test_gake_qrom_speed1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
+target_include_directories(gake_network1024_avx2 PRIVATE ${PROJECT_SOURCE_DIR}/avx2)
 
+target_link_libraries(gake_network1024_avx2 kyber1024_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake1024_avx2 kyber1024_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_qrom1024_avx2 kyber_qrom1024_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_speed1024_avx2 kyber1024_avx2 ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})

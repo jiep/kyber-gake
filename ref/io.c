@@ -29,7 +29,7 @@ int read_ca_data(char* filename, int num_parties, ca_public* data) {
   if (fp == NULL)
     return 1;
 
-  if (fread(data, sizeof(ca_public), num_parties, fp) != num_parties) {
+  if (fread(data, sizeof(ca_public), num_parties, fp) != ((size_t) num_parties)) {
     return 1;
   }
   fclose(fp);
@@ -49,9 +49,8 @@ int get_pk(char* ip_str, uint8_t* pk, ca_public* data, int length) {
 }
 
 void set_ip(char* ip_str, ip_t* ip) {
-  short j = 0;
   char* ip_cpy = malloc((strlen(ip_str)+1)*sizeof(char));
-  strncpy(ip_cpy, ip_str, strlen(ip_str)+1);
+  strcpy(ip_cpy, ip_str);
   char* token = strtok(ip_cpy, ".");
   ip_t out;
   for (short j = 0; j < 4; j++) {
@@ -67,53 +66,22 @@ void ip_to_str(ip_t ip, char* ip_str) {
   sprintf(ip_str, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 }
 
-void set_message(uint8_t* iv, uint8_t* tag, char* ct, int ct_len, uint8_t* message) {
+void set_message(uint8_t* iv, uint8_t* tag, uint8_t* ct, int ct_len, uint8_t* message) {
   memcpy(message, iv, AES_256_IVEC_LENGTH);
   memcpy(message + AES_256_IVEC_LENGTH, tag, AES_256_GCM_TAG_LENGTH);
   memcpy(message + AES_256_IVEC_LENGTH + AES_256_GCM_TAG_LENGTH, &ct_len, sizeof(int));
   memcpy(message + AES_256_IVEC_LENGTH + AES_256_GCM_TAG_LENGTH + sizeof(int), ct, ct_len);
 }
 
-void unset_message(uint8_t* message, uint8_t* iv, uint8_t* tag, char* ct, int *ct_len) {
+void unset_message(uint8_t* message, uint8_t* iv, uint8_t* tag, uint8_t* ct, int *ct_len) {
   memcpy(iv, message, AES_256_IVEC_LENGTH);
   memcpy(tag, message + AES_256_IVEC_LENGTH, AES_256_GCM_TAG_LENGTH);
   memcpy(ct_len, message + AES_256_IVEC_LENGTH + AES_256_GCM_TAG_LENGTH, sizeof(int));
   memcpy(ct, message + AES_256_IVEC_LENGTH + AES_256_GCM_TAG_LENGTH + sizeof(int), *ct_len);
 }
 
-void encrypt(char* m, uint8_t* k, uint8_t* message) {
-
-  unsigned char* aad = (unsigned char *) "";
-  int aad_len = strlen((char *) aad);
-
-  unsigned char iv[AES_256_IVEC_LENGTH];
-  unsigned char ct[MESSAGE_LENGTH];
-  unsigned char tag[AES_256_GCM_TAG_LENGTH];
-  bzero(ct, MESSAGE_LENGTH);
-  randombytes(iv, AES_256_IVEC_LENGTH);
-  int ct_len = gcm_encrypt(m, strlen(m), aad, aad_len, k, iv, ct, tag);
-  set_message(iv, tag, ct, ct_len, message);
-}
-
-void decrypt(uint8_t* message, uint8_t* k, char* m) {
-  unsigned char iv[AES_256_IVEC_LENGTH];
-  unsigned char tag[AES_256_GCM_TAG_LENGTH];
-  unsigned char ct[MESSAGE_LENGTH];
-  unsigned char plaintext[MESSAGE_LENGTH];
-  int ct_len;
-
-  unset_message(message, iv, tag, ct, &ct_len);
-
-  unsigned char* aad = (unsigned char *) "";
-  int aad_len = strlen((char *) aad);
-
-  gcm_decrypt(ct, ct_len, aad, aad_len, tag, k, iv, AES_256_IVEC_LENGTH, m);
-}
-
 int write_keys(keys_t* key, char* outfile) {
   FILE* fp;
-  size_t len = 0;
-  ssize_t read;
   fp = fopen(outfile, "wb");
   if (fp == NULL)
     return 1;
@@ -139,7 +107,7 @@ int read_ips(char* filename, ip_t* ips) {
     char* token;
     int j = 0;
     ip_t ip;
-    while (token = strsep(&line, ".")){
+    while ((token = strsep(&line, "."))){
       ip[j] = atoi(token);
       j++;
     }
@@ -156,8 +124,6 @@ int read_ips(char* filename, ip_t* ips) {
 
 int write_ca_info(ca_public* pps, int num_parties, char* outfile) {
   FILE* fp;
-  size_t len = 0;
-  ssize_t read;
   fp = fopen(outfile, "wb");
   if (fp == NULL)
     return 1;

@@ -8,11 +8,12 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include "io.h"
+#include "gake_network.h"
 #include "common.h"
 #include "emoji.h"
-#include "../ref/utils.h"
-#include "../ref/gake.h"
+#include "utils.h"
+#include "gake.h"
+
 
 void compute_masterkey_i(Party* party, int num_parties, int index) {
 
@@ -83,7 +84,7 @@ void init_party(Party* party, int num_parties, ip_t* ips, keys_t* keys) {
   for (int j = 0; j < num_parties; j++) {
     char pid[PID_LENGTH];
     ip_to_str(ips[j], pid);
-    sprintf(pid, "%s", pid);
+    // sprintf(pid, "%s", pid);
     memcpy(party->pids[j], pid, PID_LENGTH);
   }
 
@@ -193,7 +194,7 @@ int check_commitments_i(Party* party, int num_parties, ca_public* data) {
   return 0;
 }
 
-void read_n_bytes(int socket, unsigned int x, void* buffer) {
+void read_n_bytes(int socket, int x, unsigned char* buffer) {
   int bytesRead = 0;
   int result;
   while (bytesRead < x) {
@@ -203,6 +204,32 @@ void read_n_bytes(int socket, unsigned int x, void* buffer) {
     }
     bytesRead += result;
   }
+}
+
+void free_party(Party* party, int num_parties) {
+  for (int j = 0; j < num_parties; j++) {
+    init_to_zero(party->commitments[j].ciphertext_kem, KYBER_CIPHERTEXTBYTES);
+    init_to_zero(party->commitments[j].ciphertext_dem, DEM_LEN);
+    init_to_zero(party->commitments[j].tag, AES_256_GCM_TAG_LENGTH);
+    init_to_zero(party->coins[j], COMMITMENTCOINSBYTES);
+    init_to_zero(party->masterkey[j], KEX_SSBYTES);
+    init_to_zero(party->xs[j], KEX_SSBYTES);
+    init_to_zero((unsigned char*) party->pids[j], PID_LENGTH);
+  }
+  init_to_zero(party->sid, KEX_SSBYTES);
+  init_to_zero(party->sk, KEX_SSBYTES);
+  init_to_zero(party->key_left, KEX_SSBYTES);
+  init_to_zero(party->key_right, KEX_SSBYTES);
+  init_to_zero(party->public_key, CRYPTO_PUBLICKEYBYTES);
+  init_to_zero(party->secret_key, CRYPTO_SECRETKEYBYTES);
+  party->term = 0;
+  party->acc = 0;
+
+  free(party->commitments);
+  free(party->masterkey);
+  free(party->pids);
+  free(party->coins);
+  free(party->xs);
 }
 
 int main(int argc, char* argv[]) {
@@ -242,7 +269,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  printf("index: %d\n", index);
+  printf("ind: %d\n", index);
 
   read_keys(argv[1], &keys);
   printf("pk: ");
@@ -273,7 +300,6 @@ int main(int argc, char* argv[]) {
   printf("left: %s\n", (char*) party.pids[left]);
   printf("right: %s\n", (char*) party.pids[right]);
 
-  char ip_str[17];
   unsigned char pk_left[CRYPTO_PUBLICKEYBYTES];
   unsigned char pk_right[CRYPTO_PUBLICKEYBYTES];
   get_pk((char*) party.pids[left], pk_left, data, NUM_PARTIES);
@@ -296,8 +322,8 @@ int main(int argc, char* argv[]) {
   int pi_d, pid;
   int fd1[2], fd2[2];
 
-  pipe(fd1);
-  pipe(fd2);
+  if(pipe(fd1)){};
+  if(pipe(fd2)){};
 
   // Round 1-2
   pi_d = fork();
@@ -306,7 +332,7 @@ int main(int argc, char* argv[]) {
 
     struct sockaddr_in serveraddress, client;
     socklen_t length;
-    int sockert_file_descriptor, connection, bind_status, connection_status;
+    int connection, bind_status, connection_status;
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if(fd == -1){
       printf("Socket creation failed!\n");
@@ -378,7 +404,7 @@ int main(int argc, char* argv[]) {
     printf("[S] key (l): ");
     print_key(party.key_left, KEX_SSBYTES);
 
-    write(fd1[1], party.key_left, sizeof(party.key_left));
+    if(write(fd1[1], party.key_left, sizeof(party.key_left))){};
     close(fd1[1]);
     close(connection);
     exit(0);
@@ -390,11 +416,11 @@ int main(int argc, char* argv[]) {
       printf("\nParent Process:\n\tpid:%d\n\tppid :%d\n",getpid(),getppid());
       close(fd1[1]);
       close(fd2[1]);
-      read(fd1[0], party.key_left, sizeof(party.key_left));
+      if(read(fd1[0], party.key_left, sizeof(party.key_left))){};
       printf("key (l): ");
       print_key(party.key_left, KEX_SSBYTES);
 
-      read(fd2[0], party.key_right, sizeof(party.key_right));
+      if(read(fd2[0], party.key_right, sizeof(party.key_right))){};
       printf("key (r): ");
       print_key(party.key_right, KEX_SSBYTES);
 
@@ -453,7 +479,7 @@ int main(int argc, char* argv[]) {
       printf("[C] key: ");
       print_key(party.key_right, KEX_SSBYTES);
 
-      write(fd2[1], &party.key_right, sizeof(party.key_right));
+      if(write(fd2[1], &party.key_right, sizeof(party.key_right))){};
       close(fd2[1]);
       // close(fd);
       exit(0);
@@ -480,7 +506,7 @@ int main(int argc, char* argv[]) {
   int pid_3, pid2_3;
   int fd_3[2];
 
-  pipe(fd_3);
+  if(pipe(fd_3)){};
 
   // for (int i = 0; i < NUM_PARTIES; i++) {
   //   pipe(&fd_3[i]);
@@ -533,18 +559,18 @@ int main(int argc, char* argv[]) {
         close(fd_3[1]);
         unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
         char u_i[PID_LENGTH];
-        read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+        if(read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_LENGTH)){};
         printf("-----------------------------------\n");
         printf("Read from parent: \n");
         print_key(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
         memcpy(u_i, m1_i, PID_LENGTH);
-        int index = get_index(ips, NUM_PARTIES, u_i);
-        printf("index: %d\n", index);
+        int ind2 = get_index(ips, NUM_PARTIES, u_i);
+        printf("ind2: %d\n", ind2);
         Commitment ci;
         printf("Copy to party\n");
         copy_commitment(m1_i + PID_LENGTH, &ci);
         print_commitment(&ci);
-        party.commitments[index] = ci;
+        party.commitments[ind2] = ci;
         printf("-----------------------------------\n");
       }
       print_party(&party, 0, NUM_PARTIES, 10);
@@ -601,7 +627,7 @@ int main(int argc, char* argv[]) {
         // for(int j = 0; j < FD_SETSIZE; ++j){
         //   if(FD_ISSET (j, &read_fd_set)){
         //     if(j == fd) {
-              int length = sizeof(client);
+              socklen_t length = sizeof(client);
               int new = accept(fd, (SA*)&client, &length);
 
               if(new == -1){
@@ -627,7 +653,7 @@ int main(int argc, char* argv[]) {
               printf("u_i: %s\n", (char*) u_i);
               int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
               printf("index: %d\n", ind);
-              write(fd_3[1], m1_i, sizeof(m1_i));
+              if(write(fd_3[1], m1_i, sizeof(m1_i))){};
               bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
               // close(j);
               // FD_CLR(j, &active_fd_set);
@@ -661,7 +687,7 @@ int main(int argc, char* argv[]) {
   int pid_4, pid2_4;
   int fd_4[2];
 
-  pipe(fd_4);
+  if(pipe(fd_4)){};
 
   // for (int i = 0; i < NUM_PARTIES; i++) {
   //   pipe(&fd_3[i]);
@@ -714,16 +740,16 @@ int main(int argc, char* argv[]) {
         close(fd_4[1]);
         unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
         char u_i[PID_LENGTH];
-        read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+        if(read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES)){};
         printf("-----------------------------------\n");
         printf("Read from parent (m2): \n");
         print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
         memcpy(u_i, m2_i, PID_LENGTH);
-        int index = get_index(ips, NUM_PARTIES, u_i);
-        printf("index: %d\n", index);
+        int ind = get_index(ips, NUM_PARTIES, u_i);
+        printf("ind: %d\n", ind);
         printf("Copy to party\n");
-        memcpy(party.xs[index], m2_i + PID_LENGTH, KEX_SSBYTES);
-        memcpy(party.coins[index], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTCOINSBYTES);
+        memcpy(party.xs[ind], m2_i + PID_LENGTH, KEX_SSBYTES);
+        memcpy(party.coins[ind], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTCOINSBYTES);
         printf("-----------------------------------\n");
       }
       print_party(&party, 0, NUM_PARTIES, 10);
@@ -780,7 +806,7 @@ int main(int argc, char* argv[]) {
         // for(int j = 0; j < FD_SETSIZE; ++j){
         //   if(FD_ISSET (j, &read_fd_set)){
         //     if(j == fd) {
-              int length = sizeof(client);
+              socklen_t length = sizeof(client);
               int new = accept(fd, (SA*)&client, &length);
 
               if(new == -1){
@@ -795,7 +821,7 @@ int main(int argc, char* argv[]) {
                 // close(fd_3[2*i]);
               // }
               unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-              read(new, m2_i, sizeof(m2_i));
+              if(read(new, m2_i, sizeof(m2_i))){};
               printf("child received: ");
               print_key(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
 
@@ -805,7 +831,7 @@ int main(int argc, char* argv[]) {
               printf("u_i: %s\n", (char*) u_i);
               int ind = get_index(ips, NUM_PARTIES, (char*) u_i);
               printf("index: %d\n", ind);
-              write(fd_4[1], m2_i, sizeof(m2_i));
+              if(write(fd_4[1], m2_i, sizeof(m2_i))){};
               bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
               // close(j);
               // FD_CLR(j, &active_fd_set);
@@ -861,5 +887,7 @@ int main(int argc, char* argv[]) {
 
   free(ips);
   free(data);
+  free_party(&party, NUM_PARTIES);
+  printf("Removed secrets from memory!\n");
   return 0;
 }
