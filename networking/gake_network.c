@@ -33,31 +33,31 @@ void compute_masterkey_i(Party* party, int num_parties, int index) {
 }
 
 void compute_xs_commitment(Party* party, int index) {
-    X xi;
-    Coins ri;
-    Commitment ci;
+  X xi;
+  Coins ri;
+  Commitment ci;
 
-    unsigned char msg[KEX_SSBYTES + sizeof(int)];
-    init_to_zero(msg, KEX_SSBYTES + sizeof(int));
-    char buf_int[sizeof(int)];
-    init_to_zero((unsigned char*) buf_int, KEX_SSBYTES + sizeof(int));
-    itoa(index, buf_int);
+  unsigned char msg[KEX_SSBYTES + sizeof(int)];
+  init_to_zero(msg, KEX_SSBYTES + sizeof(int));
+  char buf_int[sizeof(int)];
+  init_to_zero((unsigned char*) buf_int, KEX_SSBYTES + sizeof(int));
+  itoa(index, buf_int);
 
-    xor_keys(party->key_right, party->key_left, xi);
-    randombytes(ri, COMMITMENTCOINSBYTES);
+  xor_keys(party->key_right, party->key_left, xi);
+  randombytes(ri, COMMITMENTCOINSBYTES);
 
-    memcpy(msg, &xi, KEX_SSBYTES);
-    memcpy(msg + KEX_SSBYTES, &buf_int, sizeof(int));
-    commit(party->public_key, msg, DEM_LEN, ri, &ci);
+  memcpy(msg, &xi, KEX_SSBYTES);
+  memcpy(msg + KEX_SSBYTES, &buf_int, sizeof(int));
+  commit(party->public_key, msg, DEM_LEN, ri, &ci);
 
-    memcpy(party->xs[index], &xi, KEX_SSBYTES);
-    memcpy(party->coins[index], &ri, COMMITMENTCOINSBYTES);
-    party->commitments[index] = ci;
+  memcpy(party->xs[index], &xi, KEX_SSBYTES);
+  memcpy(party->coins[index], &ri, COMMITMENTCOINSBYTES);
+  party->commitments[index] = ci;
 }
 
 void compute_sk_sid_i(Party* party, int num_parties) {
 
-    unsigned char mki[(KEX_SSBYTES + PID_LENGTH*sizeof(char))*num_parties];
+  unsigned char mki[(KEX_SSBYTES + PID_LENGTH*sizeof(char))*num_parties];
 
   // Concat master key
   concat_masterkey(party->masterkey, party->pids, num_parties, mki);
@@ -170,8 +170,10 @@ int check_xs_i(Party* party, int num_parties) {
   return 0;
 }
 
-int check_commitments_i(Party* party, int num_parties) {
+int check_commitments_i(Party* party, int num_parties, ca_public* data) {
   for (int j = 0; j < num_parties; j++) {
+    unsigned char pk[CRYPTO_PUBLICKEYBYTES];
+    get_pk((char*) party->pids[j], pk, data, num_parties);
     unsigned char msg[KEX_SSBYTES + sizeof(int)];
     char buf_int[sizeof(int)];
     init_to_zero((unsigned char*) buf_int, sizeof(int));
@@ -179,7 +181,7 @@ int check_commitments_i(Party* party, int num_parties) {
     memcpy(msg, party->xs[j], KEX_SSBYTES);
     memcpy(msg + KEX_SSBYTES, buf_int, sizeof(int));
 
-    int res_check = check_commitment(party->public_key,
+    int res_check = check_commitment(pk,
                      msg,
                      party->coins[j],
                      &party->commitments[j]);
@@ -810,15 +812,15 @@ int main(int argc, char* argv[]) {
   while ((wpid3 = wait(&status3)) > 0); // Wait to finish child processes
 
   int res = check_xs_i(&party, NUM_PARTIES); // Check Xi
-  int result = check_commitments_i(&party, NUM_PARTIES); // Check commitments
+  int result = check_commitments_i(&party, NUM_PARTIES, data); // Check commitments
 
   if (res == 0) {
-    printf("Xi are zero!\n");
+    printf("\t\tXi are zero!\n");
   } else {
     printf("\t\tXi are not zero!\n");
     party.acc = 0;
     party.term = 1;
-    // return 1;
+    return 1;
   }
 
   if (result == 0) {
@@ -827,7 +829,7 @@ int main(int argc, char* argv[]) {
     printf("\t\tCommitments are not correct!\n");
     party.acc = 0;
     party.term = 1;
-    // return 1;
+    return 1;
   }
 
   compute_masterkey_i(&party, NUM_PARTIES, index);
