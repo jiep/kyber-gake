@@ -12,5 +12,11 @@ target_link_libraries(client kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Th
 add_executable(init init.c io.c ../ref/gake.c ../ref/utils.c ../ref/kex.c ../ref/randombytes.c ../ref/commitment.c ../ref/indcca.c ../ref/aes256gcm.c ../ref/kem.c ../ref/kem_det.c)
 target_link_libraries(init kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 
-add_executable(gake_network gake_network.c emoji.c io.c ../ref/gake.c ../ref/utils.c ../ref/kex.c ../ref/randombytes.c ../ref/commitment.c ../ref/indcca.c ../ref/aes256gcm.c ../ref/kem.c ../ref/kem_det.c)
-target_link_libraries(gake_network kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+add_executable(gake_network1024 gake_network.c emoji.c io.c ../ref/gake.c ../ref/utils.c ../ref/kex.c ../ref/randombytes.c ../ref/commitment.c ../ref/indcca.c ../ref/aes256gcm.c ../ref/kem.c ../ref/kem_det.c)
+target_link_libraries(gake_network1024 kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+add_executable(gake_network768 gake_network.c emoji.c io.c ../ref/gake.c ../ref/utils.c ../ref/kex.c ../ref/randombytes.c ../ref/commitment.c ../ref/indcca.c ../ref/aes256gcm.c ../ref/kem.c ../ref/kem_det.c)
+target_link_libraries(gake_network768 kyber768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+add_executable(gake_network512 gake_network.c emoji.c io.c ../ref/gake.c ../ref/utils.c ../ref/kex.c ../ref/randombytes.c ../ref/commitment.c ../ref/indcca.c ../ref/aes256gcm.c ../ref/kem.c ../ref/kem_det.c)
+target_link_libraries(gake_network512 kyber512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
