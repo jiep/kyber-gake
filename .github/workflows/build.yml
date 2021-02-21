@@ -68,7 +68,7 @@ jobs:
         name: arm64
         path: |
           ./artifacts/build/ref/test_gake*
-          ./artifacts/build/ref/gake_network*
+          ./artifacts/build/ref/gake*_network*
         retention-days: 7
         if-no-files-found: error
 
