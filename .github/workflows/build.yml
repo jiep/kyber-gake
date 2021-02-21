@@ -30,7 +30,7 @@ jobs:
         name: x86_64
         path: |
           ./build/ref/test_gake*
-          ./build/ref/gake_network*
+          ./build/ref/gake*_network*
           ./build/avx2/test_gake*
         retention-days: 7
         if-no-files-found: error
