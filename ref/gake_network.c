@@ -171,10 +171,10 @@ int check_xs_i(Party* party, int num_parties) {
   return 0;
 }
 
-int check_commitments_i(Party* party, int num_parties, ca_public* data) {
+int check_commitments_i(Party* party, int num_parties, ca_public* data, int ca_length) {
   for (int j = 0; j < num_parties; j++) {
     unsigned char pk[CRYPTO_PUBLICKEYBYTES];
-    get_pk((char*) party->pids[j], pk, data, num_parties);
+    get_pk((char*) party->pids[j], pk, data, ca_length);
     unsigned char msg[KEX_SSBYTES + sizeof(int)];
     char buf_int[sizeof(int)];
     init_to_zero((unsigned char*) buf_int, sizeof(int));
@@ -257,7 +257,6 @@ int main(int argc, char* argv[]) {
   int NUM_PARTIES = count_lines(argv[3]);
 
   keys_t keys;
-  ca_public* data = (ca_public*) malloc(NUM_PARTIES*sizeof(ca_public));
 
   ip_t* ips = (ip_t*) malloc(NUM_PARTIES*sizeof(ip_t));
 
@@ -270,7 +269,13 @@ int main(int argc, char* argv[]) {
 
   read_keys(argv[1], &keys);
 
-  read_ca_data(argv[2], NUM_PARTIES, data);
+  int ca_length = get_ca_length(argv[2]);
+  ca_public* data = (ca_public*) malloc(ca_length * sizeof(ca_public));
+  read_ca_data(argv[2], &ca_length, data);
+
+  for (int i = 0; i < ca_length; i++) {
+    print_short_key(data[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
+  }
 
   Party party;
 
@@ -281,8 +286,8 @@ int main(int argc, char* argv[]) {
 
   unsigned char pk_left[CRYPTO_PUBLICKEYBYTES];
   unsigned char pk_right[CRYPTO_PUBLICKEYBYTES];
-  get_pk((char*) party.pids[left], pk_left, data, NUM_PARTIES);
-  get_pk((char*) party.pids[right], pk_right, data, NUM_PARTIES);
+  get_pk((char*) party.pids[left], pk_left, data, ca_length);
+  get_pk((char*) party.pids[right], pk_right, data, ca_length);
 
   int pi_d, pid;
   int fd1[2], fd2[2];
@@ -694,7 +699,7 @@ int main(int argc, char* argv[]) {
   while ((wpid3 = wait(&status3)) > 0); // Wait to finish child processes
 
   int res = check_xs_i(&party, NUM_PARTIES); // Check Xi
-  int result = check_commitments_i(&party, NUM_PARTIES, data); // Check commitments
+  int result = check_commitments_i(&party, NUM_PARTIES, data, ca_length); // Check commitments
 
   if (res == 0) {
     printf("\tXi are zero!\n");
@@ -725,7 +730,6 @@ int main(int argc, char* argv[]) {
   print_emojified_key(emojified_key);
 
   free(ips);
-  free(data);
   free_party(&party, NUM_PARTIES);
   printf("Removed secrets from memory!\n");
   return 0;

@@ -3,8 +3,8 @@
 #include <stdlib.h>
 
 #include "io.h"
-#include "../ref/aes256gcm.h"
-#include "../ref/randombytes.h"
+#include "aes256gcm.h"
+#include "randombytes.h"
 
 #ifndef MESSAGE_LENGTH
 #define MESSAGE_LENGTH 1024
@@ -23,13 +23,24 @@ int read_keys(char* filename, keys_t* data) {
   return 0;
 }
 
-int read_ca_data(char* filename, int num_parties, ca_public* data) {
+int get_ca_length(char* filename) {
+  FILE* fp;
+  fp = fopen(filename, "rb");
+
+  int parties = 0;
+  if (fread(&parties, sizeof(int), 1, fp)) {};
+  fclose(fp);
+  return parties;
+}
+
+int read_ca_data(char* filename, int* parties, ca_public* data) {
   FILE* fp;
   fp = fopen(filename, "rb");
   if (fp == NULL)
     return 1;
 
-  if (fread(data, sizeof(ca_public), num_parties, fp) != ((size_t) num_parties)) {
+  if (fread(parties, sizeof(int), 1, fp)) {};
+  if (fread(data, sizeof(ca_public), *parties, fp) != ((size_t) *parties)) {
     return 1;
   }
   fclose(fp);
@@ -111,7 +122,6 @@ int read_ips(char* filename, ip_t* ips) {
       ip[j] = atoi(token);
       j++;
     }
-    // print_ip_hex(ip);
     memcpy(ips[i], ip, sizeof(ip_t));
     i++;
   }
@@ -122,13 +132,14 @@ int read_ips(char* filename, ip_t* ips) {
   return 0;
 }
 
-int write_ca_info(ca_public* pps, int num_parties, char* outfile) {
+int write_ca_info(ca_public* pps, int parties, char* outfile) {
   FILE* fp;
   fp = fopen(outfile, "wb");
   if (fp == NULL)
     return 1;
 
-  fwrite(pps, sizeof(ca_public), num_parties, fp);
+  fwrite(&parties, sizeof(int), 1, fp);
+  fwrite(pps, sizeof(ca_public), parties, fp);
 
   fclose(fp);
 

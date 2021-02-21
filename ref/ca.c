@@ -1,10 +1,9 @@
 #include <string.h>
 
 #include "io.h"
-#include "../ref/gake.h"
+#include "gake.h"
 
 void print_ip_hex(ip_t ip);
-int read_ips(char* filename, ip_t* ips);
 
 void print_ip_hex(ip_t ip) {
   for (short i = 0; i < 4; i++) {
@@ -15,7 +14,6 @@ void print_ip_hex(ip_t ip) {
 
 int main() {
   char* filename_ca = "ca.bin";
-  char* filename_keys = "keys.bin";
   char* filename_ips = "ips.txt";
 
   int NUM_PARTIES = count_lines(filename_ips);
@@ -25,11 +23,11 @@ int main() {
 
   read_ips(filename_ips, ips);
 
-  for (size_t i = 0; i < NUM_PARTIES; i++) {
+  for (int i = 0; i < NUM_PARTIES; i++) {
     print_ip_hex(ips[i]);
   }
 
-  ca_public* pps = (ca_public*) malloc(sizeof(ca_public)*NUM_PARTIES);
+  ca_public* pps = (ca_public*) malloc(sizeof(ca_public) * NUM_PARTIES);
 
   Party *parties = (Party*) malloc(sizeof(Party) * NUM_PARTIES);
 
@@ -60,13 +58,16 @@ int main() {
 
   write_ca_info(pps, NUM_PARTIES, filename_ca);
   ca_public* data = (ca_public*) malloc(NUM_PARTIES*sizeof(ca_public));
-  read_ca_data(filename_ca, NUM_PARTIES, data);
+  int ca_length = 0;
+  ca_public* data2 = (ca_public*) malloc(NUM_PARTIES*sizeof(ca_public));
+  read_ca_data(filename_ca, &ca_length, data2);
+  printf("ca_length: %d\n", ca_length);
 
   printf("Read data___________________________________________________\n");
-  for (size_t i = 0; i < NUM_PARTIES; i++) {
+  for (int i = 0; i < ca_length; i++) {
     printf("public_key: ");
-    print_short_key(data[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
-    print_ip_hex(data[i].ip);
+    print_short_key(data2[i].public_key, CRYPTO_PUBLICKEYBYTES, 10);
+    print_ip_hex(data2[i].ip);
 
     char filename[21];
     char ip_str[17];
@@ -76,9 +77,9 @@ int main() {
     keys_t keys_read;
     read_keys(filename, &keys_read);
     printf("w (sk): ");
-    print_key(keys_read.secret_key, CRYPTO_SECRETKEYBYTES);
+    print_short_key(keys_read.secret_key, CRYPTO_SECRETKEYBYTES, 10);
     printf("w (pk): ");
-    print_key(keys_read.public_key, CRYPTO_PUBLICKEYBYTES);
+    print_short_key(keys_read.public_key, CRYPTO_PUBLICKEYBYTES, 10);
   }
 
   free(pps);

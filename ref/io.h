@@ -14,7 +14,7 @@ typedef struct ca_public {
 } ca_public;
 
 int read_keys(char* filename, keys_t* data);
-int read_ca_data(char* filename, int num_parties, ca_public* data);
+int read_ca_data(char* filename, int* parties, ca_public* data);
 int get_pk(char* ip_str, uint8_t* pk, ca_public* data, int length);
 void set_ip(char* ip_str, ip_t* ip);
 void ip_to_str(ip_t ip, char* ip_str);
@@ -26,3 +26,4 @@ int write_ca_info(ca_public* pps, int num_parties, char* outfile);
 int count_lines(char* filename);
 int get_index(ip_t* ips, int length, char* ip);
 int file_exists(char* filename);
+int get_ca_length(char* filename);
