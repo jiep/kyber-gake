@@ -15,6 +15,8 @@ set(TEST_SPEED_GAKE_SRCS ${KYBER_SRCS} gake.c utils.c aes256gcm.c kem_det.c comm
 set(TEST_SPEED_GAKE_QROM_SRCS ${KYBER_QROM_SRCS} gake_qrom.c utils.c aes256gcm.c kem_qrom.c commitment_qrom.c randombytes.c indcca_qrom.c kex.c test_gake_qrom_speed.c)
 set(TEST_NETWORK_GAKE_SRCS gake_network.c emoji.c io.c gake.c utils.c kex.c randombytes.c commitment.c indcca.c aes256gcm.c kem.c kem_det.c)
 set(TEST_CA_GAKE_SRCS ca.c io.c gake.c utils.c kex.c randombytes.c commitment.c indcca.c aes256gcm.c kem.c kem_det.c)
+set(TEST_CA_QROM_GAKE_SRCS ca_qrom.c io_qrom.c gake_qrom.c utils.c kex_qrom.c randombytes.c commitment_qrom.c indcca_qrom.c aes256gcm.c kem.c kem_det.c)
+set(TEST_NETWORK_GAKE_QROM_SRCS ${KYBER_QROM_SRCS} gake_qrom_network.c io_qrom.c gake_qrom.c utils.c randombytes.c aes256gcm.c commitment_qrom.c indcca_qrom.c kem_qrom.c kem_det.c emoji.c)
 
 if(MSVC)
   add_compile_options(/nologo /O2 /W4 /WX /wd4146)
@@ -43,9 +45,11 @@ add_executable(test_vectors512_ref ${TEST_VECTORS_SRCS})
 add_executable(test_gake512_ref ${TEST_GAKE_SRCS})
 add_executable(gake_network512_ref ${TEST_NETWORK_GAKE_SRCS})
 add_executable(gake_ca512_ref ${TEST_CA_GAKE_SRCS})
+add_executable(gake_ca_qrom512_ref ${TEST_CA_QROM_GAKE_SRCS})
 add_executable(test_gake_qrom512_ref ${TEST_GAKE_QROM_SRCS})
 add_executable(test_gake_speed512_ref ${TEST_SPEED_GAKE_SRCS})
 add_executable(test_gake_qrom_speed512_ref ${TEST_SPEED_GAKE_QROM_SRCS})
+add_executable(gake_qrom_network512_ref ${TEST_NETWORK_GAKE_QROM_SRCS})
 
 target_link_libraries(test_kyber512_ref kyber512_ref)
 target_link_libraries(test_kex512_ref kyber512_ref)
@@ -56,6 +60,8 @@ target_link_libraries(test_gake512_ref kyber512_ref ${OPENSSL_CRYPTO_LIBRARY} Th
 target_link_libraries(test_gake_qrom512_ref kyber_qrom512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_speed512_ref kyber512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_qrom_speed512_ref kyber_qrom512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(gake_ca_qrom512_ref kyber_qrom512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(gake_qrom_network512_ref kyber_qrom512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 
 # Kyber 768
 add_library(kyber768_ref ${KYBER_FIPS202_SRCS})
@@ -75,6 +81,9 @@ add_executable(gake_ca768_ref ${TEST_CA_GAKE_SRCS})
 add_executable(test_gake_qrom768_ref ${TEST_GAKE_QROM_SRCS})
 add_executable(test_gake_speed768_ref ${TEST_SPEED_GAKE_SRCS})
 add_executable(test_gake_qrom_speed768_ref ${TEST_SPEED_GAKE_QROM_SRCS})
+add_executable(gake_ca_qrom768_ref ${TEST_CA_QROM_GAKE_SRCS})
+add_executable(gake_qrom_network768_ref ${TEST_NETWORK_GAKE_QROM_SRCS})
+
 target_link_libraries(test_kyber768_ref kyber768_ref)
 target_link_libraries(test_kex768_ref kyber768_ref)
 target_link_libraries(test_vectors768_ref kyber768_ref)
@@ -84,7 +93,8 @@ target_link_libraries(test_gake768_ref kyber768_ref ${OPENSSL_CRYPTO_LIBRARY} Th
 target_link_libraries(test_gake_qrom768_ref kyber_qrom768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_speed768_ref kyber768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_qrom_speed768_ref kyber_qrom768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
-
+target_link_libraries(gake_ca_qrom768_ref kyber_qrom768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(gake_qrom_network768_ref kyber_qrom768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 
 # Kyber 1024
 add_library(kyber1024_ref ${KYBER_FIPS202_SRCS})
@@ -104,6 +114,9 @@ add_executable(gake_ca1024_ref ${TEST_CA_GAKE_SRCS})
 add_executable(test_gake_qrom1024_ref ${TEST_GAKE_QROM_SRCS})
 add_executable(test_gake_speed1024_ref ${TEST_SPEED_GAKE_SRCS})
 add_executable(test_gake_qrom_speed1024_ref ${TEST_SPEED_GAKE_QROM_SRCS})
+add_executable(gake_ca_qrom1024_ref ${TEST_CA_QROM_GAKE_SRCS})
+add_executable(gake_qrom_network1024_ref ${TEST_NETWORK_GAKE_QROM_SRCS})
+
 target_link_libraries(test_kyber1024_ref kyber1024_ref)
 target_link_libraries(test_kex1024_ref kyber1024_ref)
 target_link_libraries(test_vectors1024_ref kyber1024_ref)
@@ -113,3 +126,5 @@ target_link_libraries(test_gake1024_ref kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} 
 target_link_libraries(test_gake_qrom1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_speed1024_ref kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(test_gake_qrom_speed1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(gake_ca_qrom1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(gake_qrom_network1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})

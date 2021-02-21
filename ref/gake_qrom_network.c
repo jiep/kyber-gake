@@ -8,12 +8,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include "gake_network.h"
+#include "gake_qrom_network.h"
 #include "common.h"
 #include "emoji.h"
 #include "utils.h"
-#include "gake.h"
-
 
 void compute_masterkey_i(Party* party, int num_parties, int index) {
 
@@ -36,7 +34,7 @@ void compute_masterkey_i(Party* party, int num_parties, int index) {
 void compute_xs_commitment(Party* party, int index) {
   X xi;
   Coins ri;
-  Commitment ci;
+  CommitmentQROM ci;
 
   unsigned char msg[KEX_SSBYTES + sizeof(int)];
   init_to_zero(msg, KEX_SSBYTES + sizeof(int));
@@ -45,14 +43,13 @@ void compute_xs_commitment(Party* party, int index) {
   itoa(index, buf_int);
 
   xor_keys(party->key_right, party->key_left, xi);
-  randombytes(ri, COMMITMENTCOINSBYTES);
+  randombytes(ri, COMMITMENTQROMCOINSBYTES);
 
   memcpy(msg, &xi, KEX_SSBYTES);
   memcpy(msg + KEX_SSBYTES, &buf_int, sizeof(int));
-  commit(party->public_key, msg, DEM_LEN, ri, &ci);
-
+  commit(party->public_key, msg, DEM_QROM_LEN, ri, &ci);
   memcpy(party->xs[index], &xi, KEX_SSBYTES);
-  memcpy(party->coins[index], &ri, COMMITMENTCOINSBYTES);
+  memcpy(party->coins[index], &ri, COMMITMENTQROMCOINSBYTES);
   party->commitments[index] = ci;
 }
 
@@ -75,7 +72,7 @@ void compute_sk_sid_i(Party* party, int num_parties) {
 }
 
 void init_party(Party* party, int num_parties, ip_t* ips, keys_t* keys) {
-  party->commitments = malloc(sizeof(Commitment) * num_parties);
+  party->commitments = malloc(sizeof(CommitmentQROM) * num_parties);
   party->masterkey = malloc(sizeof(MasterKey) * num_parties);
   party->pids = malloc(sizeof(Pid) * num_parties);
   party->coins = malloc(sizeof(Coins) * num_parties);
@@ -89,10 +86,10 @@ void init_party(Party* party, int num_parties, ip_t* ips, keys_t* keys) {
   }
 
   for (int j = 0; j < num_parties; j++) {
-    init_to_zero(party->commitments[j].ciphertext_kem, KYBER_CIPHERTEXTBYTES);
-    init_to_zero(party->commitments[j].ciphertext_dem, DEM_LEN);
+    init_to_zero(party->commitments[j].ciphertext_kem, KYBER_INDCPA_MSGBYTES);
+    init_to_zero(party->commitments[j].ciphertext_dem, DEM_QROM_LEN);
     init_to_zero(party->commitments[j].tag, AES_256_GCM_TAG_LENGTH);
-    init_to_zero(party->coins[j], COMMITMENTCOINSBYTES);
+    init_to_zero(party->coins[j], COMMITMENTQROMCOINSBYTES);
     init_to_zero(party->masterkey[j], KEX_SSBYTES);
     init_to_zero(party->xs[j], KEX_SSBYTES);
   }
@@ -102,8 +99,8 @@ void init_party(Party* party, int num_parties, ip_t* ips, keys_t* keys) {
   init_to_zero(party->key_left, KEX_SSBYTES);
   init_to_zero(party->key_right, KEX_SSBYTES);
 
-  memcpy(party->public_key, keys->public_key, CRYPTO_PUBLICKEYBYTES);
-  memcpy(party->secret_key, keys->secret_key, CRYPTO_SECRETKEYBYTES);
+  memcpy(party->public_key, keys->public_key, KYBER_INDCPA_PUBLICKEYBYTES);
+  memcpy(party->secret_key, keys->secret_key, KYBER_INDCPA_SECRETKEYBYTES);
 
   party->acc = 0;
   party->term = 0;
@@ -112,14 +109,14 @@ void init_party(Party* party, int num_parties, ip_t* ips, keys_t* keys) {
 void set_m1(Party* party, int index, uint8_t* message) {
   // U_i || C_i
   memcpy(message, party->pids[index], PID_LENGTH);
-  memcpy(message + PID_LENGTH, &party->commitments[index], COMMITMENT_LENGTH);
+  memcpy(message + PID_LENGTH, &party->commitments[index], COMMITMENT_QROM_LENGTH);
 }
 
 void set_m2(Party* party, int index, uint8_t* message) {
   // U_i || X_i || r_i
   memcpy(message, party->pids[index], PID_LENGTH);
   memcpy(message + PID_LENGTH, party->xs[index], KEX_SSBYTES);
-  memcpy(message + PID_LENGTH + KEX_SSBYTES, party->coins[index], COMMITMENTCOINSBYTES);
+  memcpy(message + PID_LENGTH + KEX_SSBYTES, party->coins[index], COMMITMENTQROMCOINSBYTES);
 }
 
 int check_m1_received(Party* party, int num_parties) {
@@ -132,11 +129,11 @@ int check_m1_received(Party* party, int num_parties) {
 }
 
 int is_zero_xs_coins(X* xs, Coins* coins) {
-  unsigned char zero[COMMITMENTCOINSBYTES];
-  init_to_zero(zero, COMMITMENTCOINSBYTES);
+  unsigned char zero[COMMITMENTQROMCOINSBYTES];
+  init_to_zero(zero, COMMITMENTQROMCOINSBYTES);
 
   if(memcmp(xs, zero, KEX_SSBYTES) != 0 ||
-     memcmp(coins, zero, COMMITMENTCOINSBYTES) != 0) {
+     memcmp(coins, zero, COMMITMENTQROMCOINSBYTES) != 0) {
        return 1;
   }
   return 0;
@@ -173,7 +170,7 @@ int check_xs_i(Party* party, int num_parties) {
 
 int check_commitments_i(Party* party, int num_parties, ca_public* data, int ca_length) {
   for (int j = 0; j < num_parties; j++) {
-    unsigned char pk[CRYPTO_PUBLICKEYBYTES];
+    unsigned char pk[KYBER_INDCPA_PUBLICKEYBYTES];
     get_pk((char*) party->pids[j], pk, data, ca_length);
     unsigned char msg[KEX_SSBYTES + sizeof(int)];
     char buf_int[sizeof(int)];
@@ -208,10 +205,10 @@ void read_n_bytes(int socket, int x, unsigned char* buffer) {
 
 void free_party(Party* party, int num_parties) {
   for (int j = 0; j < num_parties; j++) {
-    init_to_zero(party->commitments[j].ciphertext_kem, KYBER_CIPHERTEXTBYTES);
-    init_to_zero(party->commitments[j].ciphertext_dem, DEM_LEN);
+    init_to_zero(party->commitments[j].ciphertext_kem, KYBER_INDCPA_BYTES);
+    init_to_zero(party->commitments[j].ciphertext_dem, DEM_QROM_LEN);
     init_to_zero(party->commitments[j].tag, AES_256_GCM_TAG_LENGTH);
-    init_to_zero(party->coins[j], COMMITMENTCOINSBYTES);
+    init_to_zero(party->coins[j], COMMITMENTQROMCOINSBYTES);
     init_to_zero(party->masterkey[j], KEX_SSBYTES);
     init_to_zero(party->xs[j], KEX_SSBYTES);
     init_to_zero((unsigned char*) party->pids[j], PID_LENGTH);
@@ -220,8 +217,8 @@ void free_party(Party* party, int num_parties) {
   init_to_zero(party->sk, KEX_SSBYTES);
   init_to_zero(party->key_left, KEX_SSBYTES);
   init_to_zero(party->key_right, KEX_SSBYTES);
-  init_to_zero(party->public_key, CRYPTO_PUBLICKEYBYTES);
-  init_to_zero(party->secret_key, CRYPTO_SECRETKEYBYTES);
+  init_to_zero(party->public_key, KYBER_INDCPA_PUBLICKEYBYTES);
+  init_to_zero(party->secret_key, KYBER_INDCPA_SECRETKEYBYTES);
   party->term = 0;
   party->acc = 0;
 
@@ -342,18 +339,18 @@ int main(int argc, char* argv[]) {
       exit(1);
     }
 
-    unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
-    unsigned char ake_senda[KEX_AKE_SENDABYTES];
+    unsigned char ake_sendb[2*KYBER_INDCPA_BYTES];
+    unsigned char ake_senda[KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES];
 
     int bytes = 0;
 
-    read_n_bytes(connection, KEX_AKE_SENDABYTES, ake_senda);
+    read_n_bytes(connection, KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES, ake_senda);
 
-    kex_ake_sharedB(ake_sendb, party.key_left, ake_senda, party.secret_key, pk_left);
+    der_resp(party.secret_key, pk_left, party.public_key, ake_senda, left, index, party.key_left, ake_sendb);
 
     // Send second message
     bytes = write(connection, ake_sendb, sizeof(ake_sendb));
-    if(bytes == KEX_AKE_SENDBBYTES){
+    if(bytes == 2*KYBER_INDCPA_BYTES){
       printf("\tData sent successfully!\n");
     }
 
@@ -399,23 +396,22 @@ int main(int argc, char* argv[]) {
         }
       } while(connection == -1);
 
-      unsigned char eska[CRYPTO_SECRETKEYBYTES];
-      unsigned char ake_senda[KEX_AKE_SENDABYTES];
-      unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
-      unsigned char tk[KEX_SSBYTES];
+      unsigned char ake_senda[KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES];
+      unsigned char ake_sendb[2*KYBER_INDCPA_BYTES];
+      unsigned char st[KYBER_INDCPA_SECRETKEYBYTES + KYBER_INDCPA_MSGBYTES + KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES];
 
-      kex_ake_initA(ake_senda, tk, eska, pk_right);
+      init(pk_right, ake_senda, st);
 
       ssize_t bytes = 0;
 
       bytes = write(fd, ake_senda, sizeof(ake_senda));
 
-      if(bytes == KEX_AKE_SENDABYTES){
+      if(bytes == KYBER_INDCPA_PUBLICKEYBYTES + KYBER_INDCPA_BYTES){
         printf("\tData sent successfully!\n");
       }
-      read_n_bytes(fd, KEX_AKE_SENDBBYTES, ake_sendb);
+      read_n_bytes(fd, 2*KYBER_INDCPA_BYTES, ake_sendb);
 
-      kex_ake_sharedA(party.key_right, ake_sendb, tk, eska, party.secret_key);
+      der_init(party.secret_key, party.public_key, ake_sendb, st, index, right, party.key_right);
 
       if(write(fd2[1], &party.key_right, sizeof(party.key_right))){};
       close(fd2[1]);
@@ -434,7 +430,7 @@ int main(int argc, char* argv[]) {
   compute_xs_commitment(&party, index);
   print_party(&party, 0, NUM_PARTIES, 10);
 
-  unsigned char m1[PID_LENGTH + COMMITMENT_LENGTH];
+  unsigned char m1[PID_LENGTH + COMMITMENT_QROM_LENGTH];
   set_m1(&party, index, m1);
 
   int pid_3, pid2_3;
@@ -484,12 +480,12 @@ int main(int argc, char* argv[]) {
     if(pid2_3 > 0) {
       for (int i = 0; i < NUM_PARTIES - 1; i++) {
         close(fd_3[1]);
-        unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
+        unsigned char m1_i[PID_LENGTH + COMMITMENT_QROM_LENGTH];
         char u_i[PID_LENGTH];
-        if(read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_LENGTH)){};
+        if(read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_QROM_LENGTH)){};
         memcpy(u_i, m1_i, PID_LENGTH);
         int ind2 = get_index(ips, NUM_PARTIES, u_i);
-        Commitment ci;
+        CommitmentQROM ci;
         copy_commitment(m1_i + PID_LENGTH, &ci);
         party.commitments[ind2] = ci;
       }
@@ -542,14 +538,14 @@ int main(int argc, char* argv[]) {
         }
         printf("\tConnection from %s.\n", inet_ntoa(client.sin_addr));
 
-        unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
-        read_n_bytes(new, PID_LENGTH + COMMITMENT_LENGTH, m1_i);
+        unsigned char m1_i[PID_LENGTH + COMMITMENT_QROM_LENGTH];
+        read_n_bytes(new, PID_LENGTH + COMMITMENT_QROM_LENGTH, m1_i);
 
         char u_i[PID_LENGTH];
         bzero(u_i, PID_LENGTH);
         memcpy(u_i, m1_i, PID_LENGTH);
         if(write(fd_3[1], m1_i, sizeof(m1_i))){};
-        bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
+        bzero(m1_i, PID_LENGTH + COMMITMENT_QROM_LENGTH);
         count++;
         if(count == NUM_PARTIES - 1){
           exit(0);
@@ -567,7 +563,7 @@ int main(int argc, char* argv[]) {
   // Round 4
   printf("Round 4\n");
 
-  unsigned char m2[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
+  unsigned char m2[PID_LENGTH + KEX_SSBYTES + COMMITMENTQROMCOINSBYTES];
   set_m2(&party, index, m2);
 
   int pid_4, pid2_4;
@@ -617,13 +613,13 @@ int main(int argc, char* argv[]) {
     if(pid2_4 > 0) {
       for (int i = 0; i < NUM_PARTIES - 1; i++) {
         close(fd_4[1]);
-        unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
+        unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTQROMCOINSBYTES];
         char u_i[PID_LENGTH];
-        if(read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES)){};
+        if(read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTQROMCOINSBYTES)){};
         memcpy(u_i, m2_i, PID_LENGTH);
         int ind = get_index(ips, NUM_PARTIES, u_i);
         memcpy(party.xs[ind], m2_i + PID_LENGTH, KEX_SSBYTES);
-        memcpy(party.coins[ind], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTCOINSBYTES);
+        memcpy(party.coins[ind], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTQROMCOINSBYTES);
       }
     } else if(pid2_4 == 0) {
       int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -674,14 +670,14 @@ int main(int argc, char* argv[]) {
         }
         printf("\tConnection from %s.\n", inet_ntoa(client.sin_addr));
 
-        unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
+        unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTQROMCOINSBYTES];
         if(read(new, m2_i, sizeof(m2_i))){};
 
         char u_i[PID_LENGTH];
         bzero(u_i, PID_LENGTH);
         memcpy(u_i, m2_i, PID_LENGTH);
         if(write(fd_4[1], m2_i, sizeof(m2_i))){};
-        bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
+        bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTQROMCOINSBYTES);
         count2++;
         if(count2 == NUM_PARTIES - 1){
           exit(0);

@@ -11,6 +11,18 @@ void print_commitment(CommitmentQROM* commitment) {
   print_key(commitment->tag, AES_256_GCM_TAG_LENGTH);
 }
 
+int is_zero_commitment(CommitmentQROM* commitment) {
+  unsigned char zero[KYBER_INDCPA_BYTES];
+  init_to_zero(zero, KYBER_INDCPA_BYTES);
+
+  if(memcmp(commitment->ciphertext_kem, zero, KYBER_INDCPA_BYTES) != 0 ||
+     memcmp(commitment->ciphertext_dem, zero, DEM_QROM_LEN) != 0 ||
+     memcmp(commitment->tag, zero, AES_256_GCM_TAG_LENGTH) != 0) {
+       return 1;
+  }
+  return 0;
+}
+
 int commit(unsigned char* pk,
            unsigned char* m,
            int len_m,
@@ -55,4 +67,10 @@ int check_commitment(unsigned char* pk,
 
   return 0;
 
+}
+
+void copy_commitment(uint8_t* buf, CommitmentQROM* commitment) {
+  memcpy(commitment->ciphertext_kem, buf, KYBER_INDCPA_BYTES);
+  memcpy(commitment->ciphertext_dem, buf + KYBER_INDCPA_BYTES, DEM_QROM_LEN);
+  memcpy(commitment->tag, buf + KYBER_INDCPA_BYTES + DEM_QROM_LEN, AES_256_GCM_TAG_LENGTH);
 }
