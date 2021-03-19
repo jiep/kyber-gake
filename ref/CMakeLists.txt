@@ -17,6 +17,10 @@ set(TEST_NETWORK_GAKE_SRCS gake_network.c emoji.c io.c gake.c utils.c kex.c rand
 set(TEST_CA_GAKE_SRCS ca.c io.c gake.c utils.c kex.c randombytes.c commitment.c indcca.c aes256gcm.c kem.c kem_det.c)
 set(TEST_CA_QROM_GAKE_SRCS ca_qrom.c io_qrom.c gake_qrom.c utils.c kex_qrom.c randombytes.c commitment_qrom.c indcca_qrom.c aes256gcm.c kem.c kem_det.c)
 set(TEST_NETWORK_GAKE_QROM_SRCS ${KYBER_QROM_SRCS} gake_qrom_network.c io_qrom.c gake_qrom.c utils.c randombytes.c aes256gcm.c commitment_qrom.c indcca_qrom.c kem_qrom.c kem_det.c emoji.c)
+set(AES256CCM_SRCS aes256ccm.c)
+set(CHACHA20POLY1305_SRCS chacha20poly1305.c)
+set(TEST_AES256CCM ${AES256CCM_SRCS} utils.c randombytes.c test_aes256ccm.c)
+set(TEST_CHACHA20POLY1305 ${CHACHA20POLY1305_SRCS} utils.c randombytes.c test_chacha20poly1305.c)
 
 if(MSVC)
   add_compile_options(/nologo /O2 /W4 /WX /wd4146)
@@ -128,3 +132,13 @@ target_link_libraries(test_gake_speed1024_ref kyber1024_ref ${OPENSSL_CRYPTO_LIB
 target_link_libraries(test_gake_qrom_speed1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(gake_ca_qrom1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 target_link_libraries(gake_qrom_network1024_ref kyber_qrom1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+
+# -----------------------------------
+# TEST AES256-CCM
+add_executable(test_aes256ccm_ref ${TEST_AES256CCM})
+target_link_libraries(test_aes256ccm_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+# TEST AES256-CCM
+add_executable(test_chacha20poly1305_ref ${TEST_CHACHA20POLY1305})
+target_link_libraries(test_chacha20poly1305_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
