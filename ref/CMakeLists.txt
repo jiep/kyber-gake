@@ -21,6 +21,10 @@ set(AES256CCM_SRCS aes256ccm.c)
 set(CHACHA20POLY1305_SRCS chacha20poly1305.c)
 set(TEST_AES256CCM ${AES256CCM_SRCS} utils.c randombytes.c test_aes256ccm.c)
 set(TEST_CHACHA20POLY1305 ${CHACHA20POLY1305_SRCS} utils.c randombytes.c test_chacha20poly1305.c)
+set(COMMITMENT_AES256GCM_SRCS ${KYBER_SRCS} utils.c randombytes.c kem_det.c aes256gcm.c indcca.c commitment.c)
+set(COMMITMENT_CHACHA20POLY1305_SRCS ${KYBER_SRCS} utils.c randombytes.c kem_det.c chacha20poly1305.c indcca_chacha20poly1305.c commitment_chacha20poly1305.c)
+set(TEST_COMMITMENT_SPEED_AES256GCM ${COMMITMENT_AES256GCM_SRCS} test_speed_commitment_aes256gcm.c)
+set(TEST_COMMITMENT_SPEED_CHACHA20POLY1305 ${COMMITMENT_CHACHA20POLY1305_SRCS} test_speed_commitment_chacha20poly1305.c)
 
 if(MSVC)
   add_compile_options(/nologo /O2 /W4 /WX /wd4146)
@@ -139,6 +143,26 @@ target_link_libraries(gake_qrom_network1024_ref kyber_qrom1024_ref ${OPENSSL_CRY
 add_executable(test_aes256ccm_ref ${TEST_AES256CCM})
 target_link_libraries(test_aes256ccm_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
 
-# TEST AES256-CCM
+# TEST CHACHA20-POLY1305
 add_executable(test_chacha20poly1305_ref ${TEST_CHACHA20POLY1305})
 target_link_libraries(test_chacha20poly1305_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+# TEST SPEED COMMITMENT AES256-GCM
+add_executable(test_speed_commitment_aes256gcm_512_ref ${TEST_COMMITMENT_SPEED_AES256GCM})
+target_link_libraries(test_speed_commitment_aes256gcm_512_ref kyber512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+add_executable(test_speed_commitment_aes256gcm_768_ref ${TEST_COMMITMENT_SPEED_AES256GCM})
+target_link_libraries(test_speed_commitment_aes256gcm_768_ref kyber768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+add_executable(test_speed_commitment_aes256gcm_1024_ref ${TEST_COMMITMENT_SPEED_AES256GCM})
+target_link_libraries(test_speed_commitment_aes256gcm_1024_ref kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+# TEST SPEED COMMITMENT CHACHA20-POLY1305
+add_executable(test_speed_commitment_chacha20poly1305_512_ref ${TEST_COMMITMENT_SPEED_CHACHA20POLY1305})
+target_link_libraries(test_speed_commitment_chacha20poly1305_512_ref kyber512_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+add_executable(test_speed_commitment_chacha20poly1305_768_ref ${TEST_COMMITMENT_SPEED_CHACHA20POLY1305})
+target_link_libraries(test_speed_commitment_chacha20poly1305_768_ref kyber768_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
+
+add_executable(test_speed_commitment_chacha20poly1305_1024_ref ${TEST_COMMITMENT_SPEED_CHACHA20POLY1305})
+target_link_libraries(test_speed_commitment_chacha20poly1305_1024_ref kyber1024_ref ${OPENSSL_CRYPTO_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS})
