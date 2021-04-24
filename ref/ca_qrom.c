@@ -12,9 +12,15 @@ void print_ip_hex(ip_t ip) {
   printf("\n");
 }
 
-int main() {
-  char* filename_ca = "ca_qrom.bin";
-  char* filename_ips = "ips.txt";
+int main(int argc, char* argv[]) {
+  if(argc != 4){
+    printf("You must provide a path for ca, a path for ips and a folder to save keys\n");
+    exit(1);
+  }
+
+  char* filename_ca = argv[1];
+  char* filename_ips = argv[2];
+  char* output_folder = argv[3];
 
   int NUM_PARTIES = count_lines(filename_ips);
   printf("IPs read: %d\n", NUM_PARTIES);
@@ -53,7 +59,11 @@ int main() {
     char ip_str[17];
     ip_to_str(ips[i], ip_str);
     sprintf(filename, "%s_qrom.bin", ip_str);
-    write_keys(&keys, filename);
+    char fin_filename[256];
+    strcpy(fin_filename, output_folder);
+    strcat(fin_filename, "/");
+    strcat(fin_filename, filename);
+    write_keys(&keys, fin_filename);
   }
 
   write_ca_info(pps, NUM_PARTIES, filename_ca);

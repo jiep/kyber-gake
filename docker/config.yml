@@ -1,0 +1,9 @@
+N: 5
+ips: "../build/ips.txt"
+ca: "../build/ca.bin"
+subnet: "10.6.0.0/16"
+gateway: "10.6.0.1"
+docker-compose: "docker-compose.yml"
+dockerfile: "{ip}.dockerfile"
+ca-bin: "../build/ref/gake_ca1024_ref"
+output: "../build"

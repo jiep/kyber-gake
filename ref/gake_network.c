@@ -201,7 +201,7 @@ void read_n_bytes(int socket, int x, unsigned char* buffer) {
   while (bytesRead < x) {
     result = read(socket, buffer + bytesRead, x - bytesRead);
     if (result < 1) {
-      printf("Error!\n");
+      printf("Read error!\n");
     }
     bytesRead += result;
   }
