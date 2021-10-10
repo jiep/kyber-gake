@@ -1,3 +1,5 @@
+#include <sys/times.h>
+
 #include "gake_qrom.h"
 #include "io.h"
 

@@ -1,7 +1,7 @@
 #ifndef GAKE_H
 #define GAKE_H
 
-#include <time.h>
+#include <unistd.h>
 
 #include "kex.h"
 #include "indcpa.h"

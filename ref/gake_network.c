@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/times.h>
 
 #include "gake_network.h"
 #include "common.h"
@@ -274,7 +275,7 @@ int main(int argc, char* argv[]) {
   ca_public* data = (ca_public*) malloc(ca_length * sizeof(ca_public));
   read_ca_data(argv[2], &ca_length, data);
 
-  clock_t begin_total = clock();
+  clock_t begin_total = times(NULL);
 
   Party party;
 
@@ -288,7 +289,7 @@ int main(int argc, char* argv[]) {
   get_pk((char*) party.pids[left], pk_left, data, ca_length);
   get_pk((char*) party.pids[right], pk_right, data, ca_length);
 
-  clock_t end_init = clock();
+  clock_t end_init = times(NULL);
 
   int pi_d, pid;
   int fd1[2], fd2[2];
@@ -432,7 +433,7 @@ int main(int argc, char* argv[]) {
   int status = 0;
   while ((wpid = wait(&status)) > 0); // Wait to finish child processes
 
-  clock_t end_12 = clock();
+  clock_t end_12 = times(NULL);
 
   print_party(&party, 0, NUM_PARTIES, 10);
 
@@ -568,7 +569,7 @@ int main(int argc, char* argv[]) {
 
   int status2, wpid2;
   while ((wpid2 = wait(&status2)) > 0); // Wait to finish child processes
-  clock_t end_3 = clock();
+  clock_t end_3 = times(NULL);
   print_party(&party, 0, NUM_PARTIES, 10);
 
   // Round 4
@@ -735,7 +736,7 @@ int main(int argc, char* argv[]) {
   free(ips);
   free_party(&party, NUM_PARTIES);
   printf("Removed secrets from memory!\n");
-  clock_t end_4 = clock();
+  clock_t end_4 = times(NULL);
   print_stats(end_init, end_12, end_3, end_4, begin_total);
   return 0;
 }

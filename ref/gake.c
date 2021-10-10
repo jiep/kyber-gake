@@ -314,11 +314,12 @@ void print_stats(clock_t end_init,
                  clock_t end_4,
                  clock_t begin_total) {
 
-   double time_init  = (double)(end_init - begin_total) / CLOCKS_PER_SEC;
-   double time_12    = (double)(end_12 - end_init) / CLOCKS_PER_SEC;
-   double time_3     = (double)(end_3 - end_12) / CLOCKS_PER_SEC;
-   double time_4     = (double)(end_4 - end_3) / CLOCKS_PER_SEC;
-   double time_total = (double)(end_4 - begin_total) / CLOCKS_PER_SEC;
+   int CLOCK_TICKS = sysconf(_SC_CLK_TCK);
+   double time_init  = (double)(end_init - begin_total) / CLOCK_TICKS;
+   double time_12    = (double)(end_12 - end_init) / CLOCK_TICKS;
+   double time_3     = (double)(end_3 - end_12) / CLOCK_TICKS;
+   double time_4     = (double)(end_4 - end_3) / CLOCK_TICKS;
+   double time_total = (double)(end_4 - begin_total) / CLOCK_TICKS;
 
    printf("\n\nTime stats\n");
    printf("\tInit time      : %.3fs (%.2f%%)\n", time_init, time_init*100/time_total);
