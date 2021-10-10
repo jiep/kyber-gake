@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <pthread.h>
 
 #include "gake_qrom_network.h"
 #include "common.h"
@@ -230,6 +231,110 @@ void free_party(Party* party, int num_parties) {
   free(party->xs);
 }
 
+void initSocketAddress(struct sockaddr_in *serveraddress,
+                       char *ip,
+                       unsigned short int port){
+
+  // bzero(serveraddress, sizeof(serveraddress));
+  serveraddress->sin_addr.s_addr = inet_addr((char*) ip);
+  serveraddress->sin_port = htons(port);
+  serveraddress->sin_family = AF_INET;
+}
+
+void* sendMessage(void* params) {
+    client_info* client_inf = (client_info*) params;
+    int sockfd = client_inf->socket;
+
+    printf("Sending '%s' to socket %d\n", client_inf->message, sockfd);
+    int nOfBytes = 0;
+
+    nOfBytes = write(sockfd, client_inf->message, client_inf->size);
+    if (nOfBytes < 0) {
+      perror("Unable to write data!\n");
+    } else {
+      printf("Sent %d bytes to socket %d!\n", nOfBytes, sockfd);
+    }
+
+    return NULL;
+}
+
+void broadcast(int* sock, int n, unsigned char* message, int msg_length, int index) {
+  pthread_t t_id[n];
+  printf("Creating threads...\n");
+  printf("inside msg_length: %d\n", msg_length);
+  for (int i = 0; i < n; i++) {
+    if(i != index) {
+      printf("i: %d\n", i);
+      struct client_info* client_inf = malloc(sizeof(struct client_info));
+      client_inf->message = malloc(msg_length);
+      client_inf->size = msg_length;
+      client_inf->socket = sock[i];
+      printf("Llega\n");
+      memcpy(client_inf->message, message, msg_length);
+      printf("message: ");
+      print_short_key(message, msg_length, 10);
+      printf("client_inf->message: ");
+      print_short_key(client_inf->message, msg_length, 10);
+      int read = pthread_create(&t_id[i], NULL, sendMessage, (void *) client_inf);
+      if (read < 0) {
+         printf("ERROR: Return Code from pthread_create() is %d\n", read);
+         exit(1);
+      } else {
+        printf("Thread %d created successfully!\n", i);
+      }
+    }
+  }
+
+  for (int i = 0; i < n; i++) {
+    pthread_join(t_id[i], NULL);
+  }
+
+}
+
+int create_client(char* ip, int port) {
+  struct sockaddr_in servername;
+
+  printf("Create_client\n");
+
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
+  printf("sock: %d\n", sock);
+  if(sock < 0) {
+    perror("Could not create a socket\n");
+    exit(EXIT_FAILURE);
+  }
+
+  printf("port: %d\n", port);
+  bzero(&servername, sizeof(servername));
+  initSocketAddress(&servername, ip, port);
+
+  int connection;
+  do {
+    printf("Connecting to server %s \n", (char*) ip);
+    connection = connect(sock, (SA *) &servername, sizeof(servername));
+    printf("connection: %d\n", connection);
+    if(connection == -1){
+      printf("\tWaiting for the server %s to be ready...\n", (char*) ip);
+      sleep(1);
+    }
+  } while(connection == -1);
+
+  return sock;
+}
+
+void run_client(Pid* pids, int port, int n, unsigned char* message, int msg_length, int index) {
+  printf("Init client...\n");
+  int sock[n];
+  for (int i = 0; i < n; i++) {
+    if(i != index){
+      printf("Creating client %s\n", (char*) pids[i]);
+      sock[i] = create_client((char*) pids[i], port);
+      printf("Created client\n");
+    }
+  }
+  broadcast(sock, n, (void*) message, msg_length, index);
+  printf("Acaba broadcast\n");
+}
+
 int main(int argc, char* argv[]) {
 
   if (argc != 5) {
@@ -357,9 +462,10 @@ int main(int argc, char* argv[]) {
     bytes = write(connection, ake_sendb, sizeof(ake_sendb));
     if(bytes == 2*KYBER_INDCPA_BYTES){
       printf("\tData sent successfully!\n");
+      printf("Llega1?\n");
     }
-
     if(write(fd1[1], party.key_left, sizeof(party.key_left))){};
+    printf("Llega2?\n");
     close(fd1[1]);
     close(connection);
     exit(0);
@@ -376,8 +482,7 @@ int main(int argc, char* argv[]) {
 
       close(fd1[0]);
       close(fd2[0]);
-    }
-    else if(pid == 0){
+    } else if(pid == 0){
       struct sockaddr_in serveraddress;
 
       int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -417,7 +522,6 @@ int main(int argc, char* argv[]) {
       read_n_bytes(fd, 2*KYBER_INDCPA_BYTES, ake_sendb);
 
       der_init(party.secret_key, party.public_key, ake_sendb, st, index, right, party.key_right);
-
       if(write(fd2[1], &party.key_right, sizeof(party.key_right))){};
       close(fd2[1]);
       exit(0);
@@ -435,7 +539,8 @@ int main(int argc, char* argv[]) {
   compute_xs_commitment(&party, index);
   print_party(&party, 0, NUM_PARTIES, 10);
 
-  unsigned char m1[PID_LENGTH + COMMITMENT_QROM_LENGTH];
+  int m1_length = PID_LENGTH + COMMITMENT_QROM_LENGTH;
+  unsigned char m1[m1_length];
   set_m1(&party, index, m1);
 
   int pid_3, pid2_3;
@@ -445,38 +550,8 @@ int main(int argc, char* argv[]) {
 
   pid_3 = fork();
   if (pid_3 == 0) {
-    for (int i = 0; i < NUM_PARTIES; i++) {
-      if(i != index) {
-        struct sockaddr_in serveraddress;
-
-        int fd = socket(AF_INET, SOCK_STREAM, 0);
-        if(fd == -1){
-          printf("\tCreation of socket failed!\n");
-          exit(1);
-        }
-
-        bzero(&serveraddress, sizeof(serveraddress));
-        serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
-        serveraddress.sin_port = htons(PORT);
-        serveraddress.sin_family = AF_INET;
-
-        int connection;
-        do {
-          connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
-
-          if(connection == -1){
-            printf("\tWaiting for the server %s to be ready...\n", (char*) party.pids[i]);
-            sleep(3);
-          }
-        } while(connection == -1);
-
-        ssize_t bytes = write(fd, m1, sizeof(m1));
-
-        if(bytes > 0){
-          printf("\tSent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
-        }
-      }
-    }
+    run_client(party.pids, PORT, NUM_PARTIES, m1, m1_length, index);
+    printf("Acaba ronda 3\n");
     exit(0);
   }
 
