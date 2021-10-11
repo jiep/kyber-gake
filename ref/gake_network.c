@@ -478,9 +478,7 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
           // printf("------------------------------------------\n");
 
           count += 1;
-          printf("count: %d\n", count);
           if(count == num_parties - 1){
-            printf("Sale\n");
             break;
           }
 
@@ -502,14 +500,10 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
   printf("------------------------------------------\n");
   for (int j = 0; j < num_parties - 1; j++) {
     struct server_info* message = thread_result[j];
-    memcpy(&msgs[j], message->message, msg_length);
-    printf("[run_server] &msgs[%d]: ", j);
-    print_short_key(&msgs[j], msg_length, 10);
+    memcpy(msgs + j*msg_length, message->message, msg_length);
     free(message->message);
     free(message);
   }
-  printf("------------------------------------------\n");
-  printf("count: %d\n", count);
   return 0;
 }
 
@@ -750,9 +744,7 @@ int main(int argc, char* argv[]) {
         bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
         if(read(fd_3[0], m1_i, PID_LENGTH + COMMITMENT_LENGTH)){};
         memcpy(u_i, m1_i, PID_LENGTH);
-        printf("u_i: %s\n", u_i);
         int ind2 = get_index(ips, NUM_PARTIES, u_i);
-        printf("ind2: %d\n", ind2);
         Commitment ci;
         copy_commitment(m1_i + PID_LENGTH, &ci);
         party.commitments[ind2] = ci;
@@ -775,20 +767,9 @@ int main(int argc, char* argv[]) {
       // read_n_bytes(new, PID_LENGTH + COMMITMENT_LENGTH, m1_i);
 
       for (int i = 0; i < NUM_PARTIES - 1; i++) {
-          // char u_i[PID_LENGTH];
-          // bzero(u_i, PID_LENGTH);
-          printf("m1 (%d): \n", i);
-          print_short_key(&m1_s[i], m1_length, 10);
-          if(write(fd_3[1], &m1_s[i], m1_length)){};
+        if(write(fd_3[1], m1_s + i*m1_length, m1_length)){};
       }
       free(m1_s);
-
-
-      // count++;
-      // if(count == NUM_PARTIES - 1){
-      //   exit(0);
-      // }
-      // }
       exit(0);
     }
   }
@@ -796,7 +777,7 @@ int main(int argc, char* argv[]) {
   int status2, wpid2;
   while ((wpid2 = wait(&status2)) > 0); // Wait to finish child processes
   // clock_t end_3 = times(NULL);
-  // print_party(&party, 0, NUM_PARTIES, 10);
+  print_party(&party, 0, NUM_PARTIES, 10);
 
   // // Round 4
   // printf("Round 4\n");
