@@ -249,26 +249,25 @@ void initSocketAddress(struct sockaddr_in *serveraddress,
 }
 
 void* sendMessage(void* params) {
-    client_info* client_inf = (client_info*) params;
-    int sockfd = client_inf->socket;
+  client_info* client_inf = (client_info*) params;
+  int sockfd = client_inf->socket;
 
-    printf("Sending '%s' to socket %d\n", client_inf->message, sockfd);
-    int nOfBytes = 0;
+  printf("[sendMessage] Sending '%s' to socket %d\n", client_inf->message, sockfd);
+  int nOfBytes = 0;
 
+  do {
     nOfBytes = write(sockfd, client_inf->message, client_inf->size);
-    if (nOfBytes < 0) {
-      perror("Unable to write data!\n");
-    } else {
-      printf("Sent %d bytes to socket %d!\n", nOfBytes, sockfd);
-    }
+    perror("[sendMessage] Unable to write data!\n");
+  } while(nOfBytes < 0);
 
-    return NULL;
+  printf("[sendMessage] Sent %d bytes to socket %d!\n", nOfBytes, sockfd);
+
+  return NULL;
 }
 
 void broadcast(int* sock, int n, unsigned char* message, int msg_length, int index) {
   pthread_t t_id[n];
-  printf("Creating threads...\n");
-  printf("inside msg_length: %d\n", msg_length);
+  printf("[broadcast] Creating threads...\n");
   for (int i = 0; i < n; i++) {
     if(i != index) {
       struct client_info* client_inf = malloc(sizeof(struct client_info));
@@ -276,17 +275,17 @@ void broadcast(int* sock, int n, unsigned char* message, int msg_length, int ind
       client_inf->size = msg_length;
       client_inf->socket = sock[i];
       memcpy(client_inf->message, message, msg_length);
-      printf("message: ");
+      printf("[broadcast] message: ");
       print_short_key(message, msg_length, 10);
-      printf("client_inf->message: ");
+      printf("[broadcast] client_inf->message: ");
       print_short_key(client_inf->message, msg_length, 10);
-      int read = pthread_create(&t_id[i], NULL, sendMessage, (void *) client_inf);
-      if (read < 0) {
-         printf("ERROR: return code from pthread_create() is %d\n", read);
-         exit(1);
-      } else {
-        printf("Thread %d created successfully!\n", i);
-      }
+      int read;
+      do {
+        read = pthread_create(&t_id[i], NULL, sendMessage, (void *) client_inf);
+        printf("[broadcast] Thread %d created successfully!\n", i);
+      } while(read < 0);
+
+      fflush(stdout);
     }
   }
 
@@ -299,16 +298,14 @@ void broadcast(int* sock, int n, unsigned char* message, int msg_length, int ind
 int create_client(char* ip, int port) {
   struct sockaddr_in servername;
 
-  printf("Create_client\n");
+  printf("[create_client] Create_client\n");
 
   int sock = socket(AF_INET, SOCK_STREAM, 0);
-  printf("sock: %d\n", sock);
+  printf("[create_client] sock: %d\n", sock);
   if(sock < 0) {
-    perror("Could not create a socket\n");
-    exit(EXIT_FAILURE);
+    perror("[create_client] Could not create a socket\n");
   }
 
-  printf("port: %d\n", port);
   bzero(&servername, sizeof(servername));
   initSocketAddress(&servername, ip, port);
 
@@ -319,25 +316,28 @@ int create_client(char* ip, int port) {
     printf("connection: %d\n", connection);
     if(connection == -1){
       printf("\tWaiting for the server %s to be ready...\n", (char*) ip);
-      sleep(1);
+      usleep(500000);
+    } else {
+      printf("Connected to server %s \n", (char*) ip);
     }
   } while(connection == -1);
-
+  fflush(stdout);
   return sock;
 }
 
 void run_client(Pid* pids, int port, int n, unsigned char* message, int msg_length, int index) {
-  printf("Init client...\n");
+  printf("[run_client] Init client...\n");
   int sock[n];
   for (int i = 0; i < n; i++) {
     if(i != index){
-      printf("Creating client %s\n", (char*) pids[i]);
+      printf("[run_client] Creating client %s\n", (char*) pids[i]);
       sock[i] = create_client((char*) pids[i], port);
-      printf("Created client\n");
+      printf("[run_client] Created client\n");
     }
   }
   broadcast(sock, n, (void*) message, msg_length, index);
-  printf("Acaba broadcast\n");
+  printf("[run_client] Acaba broadcast\n");
+  fflush(stdout);
 }
 
 int read_from_client(int filedes) {
@@ -358,30 +358,33 @@ int read_from_client(int filedes) {
 
 void* server_connection_handler(void *socket_desc) {
   int sock = *(int*)socket_desc;
-  // int read_size;
+  int msg_length = *((int*)(socket_desc) + 1);
+  int read_size;
   // char client_message[MAXMSG];
 
+  printf("msg_length: %d\n", msg_length);
   struct server_info *info = malloc(sizeof(struct server_info));
-  info->message = malloc(MAXMSG);
-  bzero(info->message, MAXMSG);
+  info->message = malloc(msg_length);
+  bzero(info->message, msg_length);
   info->size = MAXMSG;
+  unsigned char client_message[msg_length];
 
-  read_n_bytes(sock, 1640, info->message);
+  // read_n_bytes(sock, msg_length, info->message);
 
-  // while((read_size = recv(sock, client_message, MAXMSG, 0)) > 0) {
-  //   printf("Client[%d]: %s\n", sock, info->message);
-  // }
-  // memcpy(info->message, client_message, MAXMSG);
+  while((read_size = recv(sock, client_message, msg_length, 0)) > 0) {
+    printf("Client[%d]: %s\n", sock, info->message);
+  }
+  memcpy(info->message, client_message, msg_length);
   // printf("read_size: %d\n", read_size);
-  printf("[thread] info->message: ");
-  print_short_key(info->message, 1640, 10);
+  // printf("[thread] info->message: ");
+  // print_short_key(info->message, 1640, 10);
 
-  // if(read_size == 0) {
-  //   printf("Client[%d] disconnected\n", sock);
-  //   fflush(stdout);
-  // } else if(read_size == -1) {
-  //   perror("recv failed");
-  // }
+  if(read_size == 0) {
+    printf("Client[%d] disconnected\n", sock);
+    fflush(stdout);
+  } else if(read_size == -1) {
+    perror("recv failed");
+  }
 
   free(socket_desc);
   pthread_exit(info);
@@ -448,8 +451,9 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
         pthread_t sniffer_thread;
         while((clientSocket = accept(sock, (struct sockaddr *)&clientName, (socklen_t *)&size))) {
           printf("Connection accepted\n");
-          new_sock = malloc(1);
+          new_sock = malloc(2);
           *new_sock = clientSocket;
+          *(new_sock + 1) = msg_length;
           if(pthread_create(&sniffer_thread, NULL, server_connection_handler, (void*) new_sock) < 0) {
             perror("could not create thread");
             return 1;
@@ -459,23 +463,6 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
           pthread_join(sniffer_thread, &thread_result[count]);
           puts("Handler assigned");
           FD_SET(*new_sock, &activeFdSet);
-
-          // printf("------------------------------------------\n");
-          // for (int j = 0; j < num_parties - 1; j++) {
-          //   printf("[run_server] &msgs[%d]: ", j);
-          //   print_short_key(&msgs[j], msg_length, 10);
-          //
-          //   struct server_info* message = thread_result[j];
-          //   printf("size: %d\n", message->size);
-          //   printf("[run_server] message->message: ");
-          //   print_short_key(message->message, msg_length, 10);
-          //   memcpy(&msgs[j], message->message, msg_length);
-          //   printf("[run_server] &msgs[%d]: ", count);
-          //   print_short_key(&msgs[j], msg_length, 10);
-          //   free(message->message);
-          //   free(message);
-          // }
-          // printf("------------------------------------------\n");
 
           count += 1;
           if(count == num_parties - 1){
@@ -497,7 +484,6 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
     }
   }
 
-  printf("------------------------------------------\n");
   for (int j = 0; j < num_parties - 1; j++) {
     struct server_info* message = thread_result[j];
     memcpy(msgs + j*msg_length, message->message, msg_length);
@@ -548,7 +534,7 @@ int main(int argc, char* argv[]) {
   ca_public* data = (ca_public*) malloc(ca_length * sizeof(ca_public));
   read_ca_data(argv[2], &ca_length, data);
 
-  // clock_t begin_total = times(NULL);
+  clock_t begin_total = times(NULL);
 
   Party party;
 
@@ -562,7 +548,7 @@ int main(int argc, char* argv[]) {
   get_pk((char*) party.pids[left], pk_left, data, ca_length);
   get_pk((char*) party.pids[right], pk_right, data, ca_length);
 
-  // clock_t end_init = times(NULL);
+  clock_t end_init = times(NULL);
 
   int pi_d, pid;
   int fd1[2], fd2[2];
@@ -708,7 +694,7 @@ int main(int argc, char* argv[]) {
   int status = 0;
   while ((wpid = wait(&status)) > 0); // Wait to finish child processes
 
-  // clock_t end_12 = times(NULL);
+  clock_t end_12 = times(NULL);
 
   // print_party(&party, 0, NUM_PARTIES, 10);
 
@@ -731,6 +717,7 @@ int main(int argc, char* argv[]) {
   if (pid_3 == 0) {
     run_client(party.pids, PORT, NUM_PARTIES, m1, m1_length, index);
     printf("Acaba ronda 3\n");
+    fflush(stdout);
     exit(0);
   }
 
@@ -750,21 +737,11 @@ int main(int argc, char* argv[]) {
         party.commitments[ind2] = ci;
       }
     } else if(pid2_3 == 0) {
-      int fd = socket(AF_INET, SOCK_STREAM, 0);
-      if(fd == -1){
-        printf("\t[Round 3] Socket creation failed!\n");
-        exit(1);
-      } else {
-        printf("\t[Round 3] Socket fd: %d\n", fd);
-      }
 
-      // int m1_length = PID_LENGTH + COMMITMENT_LENGTH;
-      // unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
       printf("[Round 3]\n");
       unsigned char* m1_s = malloc((NUM_PARTIES-1)*m1_length);
       bzero(m1_s, (NUM_PARTIES-1)*m1_length);
       run_server(PORT, m1_s, NUM_PARTIES, m1_length);
-      // read_n_bytes(new, PID_LENGTH + COMMITMENT_LENGTH, m1_i);
 
       for (int i = 0; i < NUM_PARTIES - 1; i++) {
         if(write(fd_3[1], m1_s + i*m1_length, m1_length)){};
@@ -776,174 +753,96 @@ int main(int argc, char* argv[]) {
 
   int status2, wpid2;
   while ((wpid2 = wait(&status2)) > 0); // Wait to finish child processes
-  // clock_t end_3 = times(NULL);
+  clock_t end_3 = times(NULL);
   print_party(&party, 0, NUM_PARTIES, 10);
 
-  // // Round 4
-  // printf("Round 4\n");
-  //
-  // unsigned char m2[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-  // set_m2(&party, index, m2);
-  //
-  // int pid_4, pid2_4;
-  // int fd_4[2];
-  //
-  // if(pipe(fd_4)){};
-  //
-  // pid_4 = fork();
-  // if (pid_4 == 0) {
-  //   for (int i = 0; i < NUM_PARTIES; i++) {
-  //     if(i != index) {
-  //       struct sockaddr_in serveraddress;
-  //
-  //       int fd = socket(AF_INET, SOCK_STREAM, 0);
-  //       if(fd == -1){
-  //         printf("\t[Round 4] Creation of Socket failed!\n");
-  //         exit(1);
-  //       }
-  //
-  //       bzero(&serveraddress, sizeof(serveraddress));
-  //       serveraddress.sin_addr.s_addr = inet_addr((char*) party.pids[i]);
-  //       serveraddress.sin_port = htons(PORT);
-  //       serveraddress.sin_family = AF_INET;
-  //
-  //       int connection;
-  //       do {
-  //         connection = connect(fd, (SA*)&serveraddress, sizeof(serveraddress));
-  //
-  //         if(connection == -1){
-  //           printf("\t[Round 4] Waiting for the server %s to be ready...\n", (char*) party.pids[i]);
-  //           usleep(500000);
-  //         }
-  //       } while(connection == -1);
-  //
-  //       ssize_t bytes = write(fd, m2, sizeof(m2));
-  //
-  //       if(bytes > 0){
-  //         printf("\t[Round 4] Sent %ld bytes to %s!\n", bytes, (char*) party.pids[i]);
-  //       }
-  //     }
-  //   }
-  //   exit(0);
-  // }
-  //
-  // if (pid_4 > 0) {
-  //   pid2_4 = fork();
-  //   if(pid2_4 > 0) {
-  //     for (int i = 0; i < NUM_PARTIES - 1; i++) {
-  //       close(fd_4[1]);
-  //       unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-  //       char u_i[PID_LENGTH];
-  //       if(read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES)){};
-  //       memcpy(u_i, m2_i, PID_LENGTH);
-  //       int ind = get_index(ips, NUM_PARTIES, u_i);
-  //       memcpy(party.xs[ind], m2_i + PID_LENGTH, KEX_SSBYTES);
-  //       memcpy(party.coins[ind], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTCOINSBYTES);
-  //     }
-  //   } else if(pid2_4 == 0) {
-  //     int fd = socket(AF_INET, SOCK_STREAM, 0);
-  //     if(fd == -1){
-  //       printf("\t[Round 4] Socket creation failed!\n");
-  //       exit(1);
-  //     } else {
-  //       printf("\t[Round 4] Socket fd: %d\n", fd);
-  //     }
-  //
-  //     int enable = 1;
-  //     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-  //       printf("\t[Round 4] setsockopt(SO_REUSEADDR) failed!\n");
-  //       exit(1);
-  //     }
-  //     struct sockaddr_in serveraddress, client;
-  //
-  //     bzero(&serveraddress, sizeof(serveraddress));
-  //     serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
-  //     serveraddress.sin_port = htons(PORT);
-  //     serveraddress.sin_family = AF_INET;
-  //
-  //     int bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
-  //
-  //     if(bind_status == -1){
-  //       printf("\t[Round 4] Socket binding failed.!\n");
-  //       exit(1);
-  //     }
-  //
-  //     int connection_status = listen(fd, 5);
-  //
-  //     if(connection_status == -1) {
-  //       printf("\t[Round 4] Socket is unable to listen for new connections!\n");
-  //       exit(1);
-  //     } else {
-  //       printf("\t[Round 4] Server is listening for new connection: \n");
-  //     }
-  //
-  //     int count2 = 0;
-  //     while(check_m2_received(&party, NUM_PARTIES) != 0) {
-  //
-  //       socklen_t length = sizeof(client);
-  //       int new = accept(fd, (SA*)&client, &length);
-  //
-  //       if(new == -1){
-  //         printf("\t[Round 4] Server is unable to accept the data from client!\n");
-  //         exit(1);
-  //       }
-  //       printf("\t[Round 4] Connection from %s.\n", inet_ntoa(client.sin_addr));
-  //
-  //       unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
-  //       if(read(new, m2_i, sizeof(m2_i))){};
-  //
-  //       char u_i[PID_LENGTH];
-  //       bzero(u_i, PID_LENGTH);
-  //       memcpy(u_i, m2_i, PID_LENGTH);
-  //       if(write(fd_4[1], m2_i, sizeof(m2_i))){};
-  //       bzero(m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES);
-  //       count2++;
-  //       if(count2 == NUM_PARTIES - 1){
-  //         exit(0);
-  //       }
-  //     }
-  //     exit(0);
-  //   }
-  // }
-  //
-  // int status3, wpid3;
-  // while ((wpid3 = wait(&status3)) > 0); // Wait to finish child processes
-  //
-  // int res = check_xs_i(&party, NUM_PARTIES); // Check Xi
-  // int result = check_commitments_i(&party, NUM_PARTIES, data, ca_length); // Check commitments
-  //
-  // if (res == 0) {
-  //   printf("\t[Round 4] Xi are zero!\n");
-  // } else {
-  //   printf("\t[Round 4] Xi are not zero!\n");
-  //   party.acc = 0;
-  //   party.term = 1;
-  //   return 1;
-  // }
-  //
-  // if (result == 0) {
-  //   printf("\t[Round 4] Commitments are correct!\n");
-  // } else {
-  //   printf("\t[Round 4] Commitments are not correct!\n");
-  //   party.acc = 0;
-  //   party.term = 1;
-  //   return 1;
-  // }
-  //
-  // compute_masterkey_i(&party, NUM_PARTIES, index);
-  // compute_sk_sid_i(&party, NUM_PARTIES);
-  // print_party(&party, 0, NUM_PARTIES, 10);
-  //
-  // char* emojified_key[4];
-  //
-  // printf("\n\nsk: ");
-  // emojify(party.sk, emojified_key);
-  // print_emojified_key(emojified_key);
-  //
-  // free(ips);
-  // free_party(&party, NUM_PARTIES);
-  // printf("Removed secrets from memory!\n");
-  // clock_t end_4 = times(NULL);
-  // print_stats(end_init, end_12, end_3, end_4, begin_total);
+  // Round 4
+  printf("Round 4\n");
+
+  int m2_length = PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES;
+  unsigned char m2[m2_length];
+  set_m2(&party, index, m2);
+
+  printf("Llega\n");
+
+  int pid_4, pid2_4;
+  int fd_4[2];
+
+  if(pipe(fd_4)){};
+
+  pid_4 = fork();
+  if (pid_4 == 0) {
+    run_client(party.pids, PORT, NUM_PARTIES, m2, m2_length, index);
+    printf("Acaba ronda 4\n");
+    fflush(stdout);
+    exit(0);
+  }
+
+  if (pid_4 > 0) {
+    pid2_4 = fork();
+    if(pid2_4 > 0) {
+      for (int i = 0; i < NUM_PARTIES - 1; i++) {
+        close(fd_4[1]);
+        unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
+        char u_i[PID_LENGTH];
+        if(read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES)){};
+        memcpy(u_i, m2_i, PID_LENGTH);
+        int ind = get_index(ips, NUM_PARTIES, u_i);
+        printf("ind: %d\n", ind);
+        printf("u_i: %s\n", u_i);
+        memcpy(party.xs[ind], m2_i + PID_LENGTH, KEX_SSBYTES);
+        memcpy(party.coins[ind], m2_i + PID_LENGTH + KEX_SSBYTES, COMMITMENTCOINSBYTES);
+      }
+    } else if(pid2_4 == 0) {
+
+      unsigned char* m2_s = malloc((NUM_PARTIES-1)*m2_length);
+      bzero(m2_s, (NUM_PARTIES-1)*m2_length);
+      run_server(PORT, m2_s, NUM_PARTIES, m2_length);
+
+      for (int i = 0; i < NUM_PARTIES - 1; i++) {
+        if(write(fd_4[1], m2_s + i*m2_length, m2_length)){};
+      }
+      free(m2_s);
+      exit(0);
+    }
+  }
+
+  int status3, wpid3;
+  while ((wpid3 = wait(&status3)) > 0); // Wait to finish child processes
+
+  int res = check_xs_i(&party, NUM_PARTIES); // Check Xi
+  int result = check_commitments_i(&party, NUM_PARTIES, data, ca_length); // Check commitments
+
+  if (res == 0) {
+    printf("\t[Round 4] Xi are zero!\n");
+  } else {
+    printf("\t[Round 4] Xi are not zero!\n");
+    party.acc = 0;
+    party.term = 1;
+    // return 1;
+  }
+
+  if (result == 0) {
+    printf("\t[Round 4] Commitments are correct!\n");
+  } else {
+    printf("\t[Round 4] Commitments are not correct!\n");
+    party.acc = 0;
+    party.term = 1;
+    // return 1;
+  }
+
+  compute_masterkey_i(&party, NUM_PARTIES, index);
+  compute_sk_sid_i(&party, NUM_PARTIES);
+  print_party(&party, 0, NUM_PARTIES, 10);
+
+  char* emojified_key[4];
+
+  printf("\n\nsk: ");
+  emojify(party.sk, emojified_key);
+  print_emojified_key(emojified_key);
+  free(ips);
+  printf("Removed secrets from memory!\n");
+  clock_t end_4 = times(NULL);
+  print_stats(end_init, end_12, end_3, end_4, begin_total);
   return 0;
 }
