@@ -10,7 +10,7 @@ DOCKERFILE_STR = """
 FROM ubuntu:20.04
 
 WORKDIR /gake
-COPY ./{impl}/gake_network{sec_level}_{impl} .
+COPY ./gake_network{sec_level}_{impl} .
 COPY {keys} keys.bin
 COPY {ca} {ca}
 COPY {ips} ips.txt
@@ -170,17 +170,15 @@ def main():
                     path_ca_bin = os.path.join(input, ca_bin)
                     print(ca_bin)
                     print(path_ca)
-                    a = create_keys_ca(path_ca_bin, filename, path_ca, path_level)
-                    print(a)
+
                     path_ips = os.path.join(path_level, filename)
                     save_ips(path_ips, ips)
+                    a = create_keys_ca(path_ca_bin, path_ips, path_ca, path_level)
+                    print(a)
                     ca_bin = ca_config["bin"].format(impl=implementation, sec_level=sl)
                     path_bin = os.path.join(input, ca_bin)
                     print(path_bin)
                     copy(path_bin, path_level)
-    # save_dockercompose(output + "/" + dockercompose_name, dockercompose)
-    # a = create_keys_ca(config["ca-bin"], filename, ca_filename, output)
-    # print(a)
 
 if __name__ == "__main__":
     main()
