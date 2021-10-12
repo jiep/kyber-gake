@@ -252,7 +252,7 @@ void* sendMessage(void* params) {
   client_info* client_inf = (client_info*) params;
   int sockfd = client_inf->socket;
 
-  printf("[sendMessage] Sending '%s' to socket %d\n", client_inf->message, sockfd);
+  printf("[sendMessage] Sending message to socket %d\n", sockfd);
   int nOfBytes = 0;
 
   do {
@@ -260,36 +260,42 @@ void* sendMessage(void* params) {
     perror("[sendMessage] Unable to write data!\n");
   } while(nOfBytes < 0);
 
+  close(client_inf->socket);
+  free(client_inf);
+
   printf("[sendMessage] Sent %d bytes to socket %d!\n", nOfBytes, sockfd);
 
   return NULL;
 }
 
-void broadcast(int* sock, int n, unsigned char* message, int msg_length, int index) {
-  pthread_t t_id[n];
+void broadcast(Pid* pids, int port, int n, unsigned char* message, int msg_length, int index) {
+  pthread_t t_id[n-1];
+  int sock[n-1];
   printf("[broadcast] Creating threads...\n");
+  int count = 0;
   for (int i = 0; i < n; i++) {
     if(i != index) {
+      sock[count] = create_client((char*) pids[i], port);
       struct client_info* client_inf = malloc(sizeof(struct client_info));
       client_inf->message = malloc(msg_length);
       client_inf->size = msg_length;
-      client_inf->socket = sock[i];
+      client_inf->socket = sock[count];
       memcpy(client_inf->message, message, msg_length);
-      printf("[broadcast] message: ");
-      print_short_key(message, msg_length, 10);
-      printf("[broadcast] client_inf->message: ");
-      print_short_key(client_inf->message, msg_length, 10);
+      // printf("[broadcast] message: ");
+      // print_short_key(message, msg_length, 10);
+      // printf("[broadcast] client_inf->message: ");
+      // print_short_key(client_inf->message, msg_length, 10);
       int read;
       do {
-        read = pthread_create(&t_id[i], NULL, sendMessage, (void *) client_inf);
-        printf("[broadcast] Thread %d created successfully!\n", i);
+        read = pthread_create(&t_id[count], NULL, sendMessage, (void *) client_inf);
+        printf("[broadcast] Thread %d created successfully!\n", count);
       } while(read < 0);
-
+      count++;
       fflush(stdout);
     }
   }
 
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n-1; i++) {
     pthread_join(t_id[i], NULL);
   }
 
@@ -311,14 +317,14 @@ int create_client(char* ip, int port) {
 
   int connection;
   do {
-    printf("Connecting to server %s \n", (char*) ip);
+    // printf("Connecting to server %s \n", (char*) ip);
     connection = connect(sock, (SA *) &servername, sizeof(servername));
-    printf("connection: %d\n", connection);
+    // printf("connection: %d\n", connection);
     if(connection == -1){
-      printf("\tWaiting for the server %s to be ready...\n", (char*) ip);
-      usleep(500000);
+      // printf("\tWaiting for the server %s to be ready...\n", (char*) ip);
+      // usleep(500000);
     } else {
-      printf("Connected to server %s \n", (char*) ip);
+      // printf("Connected to server %s \n", (char*) ip);
     }
   } while(connection == -1);
   fflush(stdout);
@@ -327,16 +333,8 @@ int create_client(char* ip, int port) {
 
 void run_client(Pid* pids, int port, int n, unsigned char* message, int msg_length, int index) {
   printf("[run_client] Init client...\n");
-  int sock[n];
-  for (int i = 0; i < n; i++) {
-    if(i != index){
-      printf("[run_client] Creating client %s\n", (char*) pids[i]);
-      sock[i] = create_client((char*) pids[i], port);
-      printf("[run_client] Created client\n");
-    }
-  }
-  broadcast(sock, n, (void*) message, msg_length, index);
-  printf("[run_client] Acaba broadcast\n");
+  broadcast(pids, port, n, message, msg_length, index);
+  printf("[run_client] End broadcast\n");
   fflush(stdout);
 }
 
@@ -381,11 +379,10 @@ void* server_connection_handler(void *socket_desc) {
 
   if(read_size == 0) {
     printf("Client[%d] disconnected\n", sock);
-    fflush(stdout);
   } else if(read_size == -1) {
     perror("recv failed");
   }
-
+  fflush(stdout);
   free(socket_desc);
   pthread_exit(info);
 }
@@ -397,7 +394,6 @@ int make_server_socket(unsigned short int port) {
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if(sock < 0) {
       perror("Could not create a socket\n");
-      exit(EXIT_FAILURE);
     }
     name.sin_family = AF_INET;
     name.sin_port = htons(port);
@@ -406,12 +402,10 @@ int make_server_socket(unsigned short int port) {
     int enable = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
       printf("\tsetsockopt(SO_REUSEADDR) failed!\n");
-      exit(1);
     }
 
     if(bind(sock, (SA *)&name, sizeof(name)) < 0) {
       perror("Could not bind a name to the socket\n");
-      exit(EXIT_FAILURE);
     }
     return(sock);
 }
@@ -431,8 +425,7 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
 
   sock = make_server_socket(port);
   if(listen(sock, num_parties) < 0) {
-      perror("Could not listen for connections\n");
-      exit(EXIT_FAILURE);
+    perror("Could not listen for connections\n");
   }
   FD_ZERO(&activeFdSet);
   FD_SET(sock, &activeFdSet);
@@ -441,7 +434,6 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
   readFdSet = activeFdSet;
   if(select(FD_SETSIZE, &readFdSet, NULL, NULL, NULL) < 0) {
     perror("Select failed\n");
-    exit(EXIT_FAILURE);
   }
 
   for(i = 0; i < FD_SETSIZE; i++) {
@@ -456,12 +448,11 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
           *(new_sock + 1) = msg_length;
           if(pthread_create(&sniffer_thread, NULL, server_connection_handler, (void*) new_sock) < 0) {
             perror("could not create thread");
-            return 1;
           }
 
           // void* thread_result[num_parties - 1];
           pthread_join(sniffer_thread, &thread_result[count]);
-          puts("Handler assigned");
+          // printf("Handler assigned\n");
           FD_SET(*new_sock, &activeFdSet);
 
           count += 1;
@@ -472,7 +463,6 @@ int run_server(int port, unsigned char* msgs, int num_parties, int msg_length) {
         }
         if(clientSocket < 0) {
            perror("Could not accept connection\n");
-           exit(EXIT_FAILURE);
         }
 
       } else {
@@ -567,7 +557,6 @@ int main(int argc, char* argv[]) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if(fd == -1){
       printf("\t[Round 1-2] Socket creation failed!\n");
-      exit(1);
     } else {
       printf("\t[Round 1-2] Socket fd: %d\n", fd);
     }
@@ -575,7 +564,6 @@ int main(int argc, char* argv[]) {
     int enable = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
       printf("\t[Round 1-2] setsockopt(SO_REUSEADDR) failed!\n");
-      exit(1);
     }
 
     bzero(&serveraddress, sizeof(serveraddress));
@@ -583,29 +571,25 @@ int main(int argc, char* argv[]) {
     serveraddress.sin_port = htons(PORT);
     serveraddress.sin_family = AF_INET;
 
-    bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
-
-    if(bind_status == -1){
+    do {
+      bind_status = bind(fd, (SA*)&serveraddress, sizeof(serveraddress));
       printf("\t[Round 1-2] Socket binding failed.!\n");
-      exit(1);
-    }
+    } while(bind_status == -1);
 
-    connection_status = listen(fd, NUM_PARTIES);
+    connection_status = listen(fd, 1);
 
     if(connection_status == -1) {
       printf("\t[Round 1-2] Socket is unable to listen for new connections!\n");
-      exit(1);
     } else {
       printf("\t[Round 1-2] Server is listening for new connection: \n");
     }
 
     length = sizeof(client);
-    connection = accept(fd, (SA*)&client, &length);
 
-    if(connection == -1){
+    do {
+      connection = accept(fd, (SA*)&client, &length);
       printf("\t[Round 1-2] Server is unable to accept the data from client!\n");
-      exit(1);
-    }
+    } while(connection == -1);
 
     unsigned char ake_sendb[KEX_AKE_SENDBBYTES];
     unsigned char ake_senda[KEX_AKE_SENDABYTES];
@@ -625,6 +609,7 @@ int main(int argc, char* argv[]) {
 
     if(write(fd1[1], party.key_left, sizeof(party.key_left))){};
     close(fd1[1]);
+    close(fd);
     close(connection);
     exit(0);
   }
@@ -647,7 +632,6 @@ int main(int argc, char* argv[]) {
       int fd = socket(AF_INET, SOCK_STREAM, 0);
       if(fd == -1){
         printf("\t[Round 1-2] Creation of socket failed.!\n");
-        exit(1);
       }
 
       bzero(&serveraddress, sizeof(serveraddress));
@@ -661,7 +645,7 @@ int main(int argc, char* argv[]) {
 
         if(connection == -1){
           printf("\t[Round 1-2] Waiting for the server %s to be ready...\n", (char*) party.pids[right]);
-          usleep(500000);
+          // usleep(500000);
         }
       } while(connection == -1);
 
@@ -686,6 +670,7 @@ int main(int argc, char* argv[]) {
 
       if(write(fd2[1], &party.key_right, sizeof(party.key_right))){};
       close(fd2[1]);
+      close(fd);
       exit(0);
     }
   }
@@ -696,7 +681,7 @@ int main(int argc, char* argv[]) {
 
   clock_t end_12 = times(NULL);
 
-  // print_party(&party, 0, NUM_PARTIES, 10);
+  print_party(&party, 0, NUM_PARTIES, 10);
 
   // Round 3
   printf("Round 3\n");
@@ -819,7 +804,7 @@ int main(int argc, char* argv[]) {
     printf("\t[Round 4] Xi are not zero!\n");
     party.acc = 0;
     party.term = 1;
-    // return 1;
+    return 1;
   }
 
   if (result == 0) {
@@ -828,7 +813,7 @@ int main(int argc, char* argv[]) {
     printf("\t[Round 4] Commitments are not correct!\n");
     party.acc = 0;
     party.term = 1;
-    // return 1;
+    return 1;
   }
 
   compute_masterkey_i(&party, NUM_PARTIES, index);

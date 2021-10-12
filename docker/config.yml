@@ -1,4 +1,4 @@
-N: 4
+N: 3
 ips: "../build/ips.txt"
 ca: "../build/ca.bin"
 subnet: "10.6.0.0/16"

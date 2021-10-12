@@ -27,7 +27,7 @@ void read_n_bytes(int socket, int x, unsigned char* buffer);
 void free_party(Party* party, int num_parties);
 void initSocketAddress(struct sockaddr_in *serveraddress, char *ip, unsigned short int port);
 void* sendMessage(void * params);
-void broadcast(int* sock, int n, unsigned char* message, int msg_length, int index);
+void broadcast(Pid* pids, int port, int n, unsigned char* message, int msg_length, int index);
 int create_client(char* ip, int port);
 void run_client(Pid* pids, int port, int n, unsigned char* message, int msg_length, int index);
 void* server_connection_handler(void *socket_desc);
