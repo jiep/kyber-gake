@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     char filename[26];
     char ip_str[17];
     ip_to_str(ips[i], ip_str);
-    sprintf(filename, "%s_qrom.bin", ip_str);
+    sprintf(filename, "%s.bin", ip_str);
     char fin_filename[256];
     strcpy(fin_filename, output_folder);
     strcat(fin_filename, "/");

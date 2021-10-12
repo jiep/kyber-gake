@@ -176,7 +176,7 @@ def main():
                     path_ips = os.path.join(path_level, filename)
                     save_ips(path_ips, ips)
                     a = create_keys_ca(path_ca_bin, path_ips, path_ca, path_level)
-                    print(a)
+                    # print(a)
                     path_bin = os.path.join(input, bin)
                     print(path_bin)
                     copy(path_bin, path_level)

@@ -5,11 +5,11 @@
 
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/times.h>
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/wait.h>
-#include <sys/times.h>
 
 #include "gake_network.h"
 #include "common.h"
@@ -18,8 +18,6 @@
 #include "gake.h"
 
 #define MAXMSG 4096
-
-pthread_mutex_t lock;
 
 void compute_masterkey_i(Party* party, int num_parties, int index) {
 
@@ -747,8 +745,6 @@ int main(int argc, char* argv[]) {
   int m2_length = PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES;
   unsigned char m2[m2_length];
   set_m2(&party, index, m2);
-
-  printf("Llega\n");
 
   int pid_4, pid2_4;
   int fd_4[2];
