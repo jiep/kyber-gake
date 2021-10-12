@@ -3,6 +3,7 @@ N:
   - 5
 input: "../build"
 output: "../build/dockerfiles"
+results_output: "../build/logs" 
 ips: "ips.txt"
 implementations:
   - ref
