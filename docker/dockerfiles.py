@@ -10,12 +10,12 @@ DOCKERFILE_STR = """
 FROM ubuntu:20.04
 
 WORKDIR /gake
-COPY ./gake_network{sec_level}_{impl} .
+COPY {bin} .
 COPY {keys} keys.bin
 COPY {ca} {ca}
 COPY {ips} ips.txt
 EXPOSE 8080
-ENTRYPOINT ["./gake_network{sec_level}_{impl}", "keys.bin", "{ca}", "ips.txt", "{ip}"]
+ENTRYPOINT ["./{bin}", "keys.bin", "{ca}", "ips.txt", "{ip}"]
 """
 
 DOCKERCOMPOSE_PARTY_STR = """
@@ -67,14 +67,15 @@ def save_dockerfiles(filename, dockerfile):
      with open(filename, "w") as f:
          f.write(dockerfile)
 
-def create_dockerfile(filename, ip, ca, ips, impl, sec_level):
+def create_dockerfile(filename, ip, ca, ips, impl, sec_level, bin):
     dockerfile = DOCKERFILE_STR.format(
         keys=ip + ".bin",
         ca=ca,
         ip=ip,
         ips=ips,
         impl=impl,
-        sec_level=sec_level
+        sec_level=sec_level,
+        bin=bin
     )
     return dockerfile
 
@@ -152,7 +153,8 @@ def main():
                     dockerfiles = []
                     print(ca_config["ca"])
                     for ip in ips:
-                        dockerfile = create_dockerfile(None, ip, ca_config["ca"], filename, implementation, sl)
+                        bin = ca_config["bin"].format(impl=implementation, sec_level=sl)
+                        dockerfile = create_dockerfile(None, ip, ca_config["ca"], filename, implementation, sl, os.path.basename(bin))
                         # print(dockerfile)
                         ip_dockerfile = dockerfile_name.format(ip=ip)
                         path_dockerfile = os.path.join(path_level, ip_dockerfile)
@@ -175,8 +177,7 @@ def main():
                     save_ips(path_ips, ips)
                     a = create_keys_ca(path_ca_bin, path_ips, path_ca, path_level)
                     print(a)
-                    ca_bin = ca_config["bin"].format(impl=implementation, sec_level=sl)
-                    path_bin = os.path.join(input, ca_bin)
+                    path_bin = os.path.join(input, bin)
                     print(path_bin)
                     copy(path_bin, path_level)
 
