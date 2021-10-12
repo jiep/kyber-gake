@@ -1,9 +1,25 @@
-N: 3
-ips: "../build/ips.txt"
-ca: "../build/ca.bin"
+N:
+  - 3
+  - 5
+input: "../build"
+output: "../build/dockerfiles"
+ips: "ips.txt"
+implementations:
+  - ref
+  - avx2
+sec-levels:
+  - 1024
+  - 768
+  - 512
+dockerfile: "{ip}.dockerfile"
+docker-compose: "docker-compose.yml"
 subnet: "10.6.0.0/16"
 gateway: "10.6.0.1"
-docker-compose: "docker-compose.yml"
-dockerfile: "{ip}.dockerfile"
-ca-bin: "../build/ref/gake_ca1024_ref"
-output: "../build"
+qrom:
+  ca: "ca_qrom.bin"
+  ca-bin: "{impl}/gake_ca_qrom{sec_level}_{impl}"
+  bin: "{impl}/gake_qrom_network{sec_level}_{impl}"
+rom:
+  ca: "ca.bin"
+  ca-bin: "{impl}/gake_ca{sec_level}_{impl}"
+  bin: "{impl}/gake_network{sec_level}_{impl}"

@@ -1,6 +1,8 @@
 import sys
 import yaml
 import subprocess
+import os
+from shutil import copy
 from pathlib import Path
 from netaddr import IPNetwork
 
@@ -8,12 +10,12 @@ DOCKERFILE_STR = """
 FROM ubuntu:20.04
 
 WORKDIR /gake
-COPY ./ref/gake_network1024_ref .
+COPY ./{impl}/gake_network{sec_level}_{impl} .
 COPY {keys} keys.bin
-COPY {ca} ca.bin
+COPY {ca} {ca}
 COPY {ips} ips.txt
 EXPOSE 8080
-ENTRYPOINT ["./gake_network1024_ref", "keys.bin", "ca.bin", "ips.txt", "{ip}"]
+ENTRYPOINT ["./gake_network{sec_level}_{impl}", "keys.bin", "{ca}", "ips.txt", "{ip}"]
 """
 
 DOCKERCOMPOSE_PARTY_STR = """
@@ -65,14 +67,21 @@ def save_dockerfiles(filename, dockerfile):
      with open(filename, "w") as f:
          f.write(dockerfile)
 
-def create_dockerfile(filename, ip):
-    dockerfile = DOCKERFILE_STR.format(keys=ip + ".bin", ca="ca.bin", ip=ip, ips="ips.txt")
+def create_dockerfile(filename, ip, ca, ips, impl, sec_level):
+    dockerfile = DOCKERFILE_STR.format(
+        keys=ip + ".bin",
+        ca=ca,
+        ip=ip,
+        ips=ips,
+        impl=impl,
+        sec_level=sec_level
+    )
     return dockerfile
 
 def create_dockercompose(ips, dockerfiles, gateway, subnet):
     parties = ""
+    port = 8080
     for (i, ip) in enumerate(ips):
-        port = 8080
         parties += DOCKERCOMPOSE_PARTY_STR.format(i=i, dockerfile=dockerfiles[i], ip=ip, port=port + i)
     dockercompose = DOCKERCOMPOSE_STR.format(parties=parties, subnet=subnet, gateway=gateway)
     return dockercompose
@@ -94,26 +103,84 @@ def main():
     with open(file) as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
-    n = config["N"]
+    N = config["N"]
     filename = config["ips"]
-    ca_filename = config["ca"]
-    subnet = config["subnet"]
-    gateway = config["gateway"]
     dockerfile_name = config["dockerfile"]
     dockercompose_name = config["docker-compose"]
+    implementations = config["implementations"]
+    sec_levels = config["sec-levels"]
+    subnet = config["subnet"]
+    gateway = config["gateway"]
+    input = config["input"]
     output = config["output"]
-    ips = generate_ips(n, subnet)
-    dockerfiles = []
-    save_ips(filename, ips)
-    for ip in ips:
-        dockerfile = create_dockerfile(None, ip)
-        filename_dockerfile = dockerfile_name.format(ip=ip)
-        dockerfiles.append(filename_dockerfile)
-        save_dockerfiles(output + "/" + filename_dockerfile, dockerfile)
-    dockercompose = create_dockercompose(ips, dockerfiles, gateway, subnet)
-    save_dockercompose(output + "/" + dockercompose_name, dockercompose)
-    a = create_keys_ca(config["ca-bin"], filename, ca_filename, output)
-    print(a)
+
+    try:
+        os.mkdir(config["output"])
+    except Exception as e:
+        print ("Unable to create folder!")
+        # sys.exit(1)
+
+    for n in N:
+        path = os.path.join(config["output"], str(n))
+        try:
+            os.mkdir(path)
+        except Exception as e:
+            print ("Unable to create folder!")
+        for type in ["qrom", "rom"]:
+            ca_config = config[type]
+            print(ca_config["ca"])
+            path_type = os.path.join(path, type)
+            print(path_type)
+            try:
+                os.mkdir(path_type)
+            except Exception as e:
+                print ("Unable to create folder!")
+            for implementation in implementations:
+                path_impl = os.path.join(path_type, implementation)
+                try:
+                    os.mkdir(path_impl)
+                except Exception as e:
+                    print ("Unable to create folder!")
+                for sl in sec_levels:
+                    path_level = os.path.join(path_impl, str(sl))
+                    try:
+                        os.mkdir(path_level)
+                    except Exception as e:
+                        print ("Unable to create folder!")
+
+                    ips = generate_ips(n, subnet)
+                    dockerfiles = []
+                    print(ca_config["ca"])
+                    for ip in ips:
+                        dockerfile = create_dockerfile(None, ip, ca_config["ca"], filename, implementation, sl)
+                        # print(dockerfile)
+                        ip_dockerfile = dockerfile_name.format(ip=ip)
+                        path_dockerfile = os.path.join(path_level, ip_dockerfile)
+                        dockerfiles.append(ip_dockerfile)
+                        # print(path_dockerfile)
+                        save_dockerfiles(path_dockerfile, dockerfile)
+                    dockercompose = create_dockercompose(ips, dockerfiles, gateway, subnet)
+                    # print(dockercompose)
+                    path_dockercompose = os.path.join(path_level, dockercompose_name)
+                    # print(path_dockercompose)
+                    save_dockercompose(path_dockercompose, dockercompose)
+                    ca_bin = ca_config["ca-bin"].format(impl=implementation, sec_level=sl)
+
+                    path_ca = os.path.join(path_level, ca_config["ca"])
+                    path_ca_bin = os.path.join(input, ca_bin)
+                    print(ca_bin)
+                    print(path_ca)
+                    a = create_keys_ca(path_ca_bin, filename, path_ca, path_level)
+                    print(a)
+                    path_ips = os.path.join(path_level, filename)
+                    save_ips(path_ips, ips)
+                    ca_bin = ca_config["bin"].format(impl=implementation, sec_level=sl)
+                    path_bin = os.path.join(input, ca_bin)
+                    print(path_bin)
+                    copy(path_bin, path_level)
+    # save_dockercompose(output + "/" + dockercompose_name, dockercompose)
+    # a = create_keys_ca(config["ca-bin"], filename, ca_filename, output)
+    # print(a)
 
 if __name__ == "__main__":
     main()
