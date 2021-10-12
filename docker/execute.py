@@ -69,7 +69,7 @@ def main():
                     abs_path = os.path.abspath(path_in_level)
                     os.chdir(abs_path)
                     # print(path_in_level)
-                    binary = "docker network rm $(docker network ls -q --filter='name=vpcbr'); docker-compose up --build --remove-orphans"
+                    binary = "docker network rm $(docker network ls -q --filter='name=vpcbr'); docker-compose up --force-recreate --build --remove-orphans"
                     # output = subprocess.Popen(binary, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
                     os.chdir(mycwd)
                     for party in range(n):
