@@ -256,6 +256,7 @@ void* sendMessage(void* params) {
   } while(nOfBytes < 0);
 
   close(client_inf->socket);
+  free(client_inf->message);
   free(client_inf);
 
   printf("[sendMessage] Sent %d bytes to socket %d!\n", nOfBytes, sockfd);
@@ -543,6 +544,7 @@ int main(int argc, char* argv[]) {
 
   // Round 1-2
   printf("Round 1-2\n");
+  fflush(stdout);
   pi_d = fork();
   if(pi_d == 0){
 
@@ -809,6 +811,7 @@ int main(int argc, char* argv[]) {
   print_emojified_key(emojified_key);
 
   free(ips);
+  free(data);
   // free_party(&party, NUM_PARTIES);
   printf("Removed secrets from memory!\n");
   clock_t end_4 = times(NULL);

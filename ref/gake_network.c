@@ -259,6 +259,7 @@ void* sendMessage(void* params) {
   } while(nOfBytes < 0);
 
   close(client_inf->socket);
+  free(client_inf->message);
   free(client_inf);
 
   printf("[sendMessage] Sent %d bytes to socket %d!\n", nOfBytes, sockfd);
@@ -822,6 +823,7 @@ int main(int argc, char* argv[]) {
   emojify(party.sk, emojified_key);
   print_emojified_key(emojified_key);
   free(ips);
+  free(data);
   printf("Removed secrets from memory!\n");
   clock_t end_4 = times(NULL);
   print_stats(end_init, end_12, end_3, end_4, begin_total);
