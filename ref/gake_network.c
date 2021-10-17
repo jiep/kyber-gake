@@ -707,8 +707,8 @@ int main(int argc, char* argv[]) {
   if (pid_3 > 0) {
     pid2_3 = fork();
     if(pid2_3 > 0) {
+      close(fd_3[1]);
       for (int i = 0; i < NUM_PARTIES - 1; i++) {
-        close(fd_3[1]);
         unsigned char m1_i[PID_LENGTH + COMMITMENT_LENGTH];
         char u_i[PID_LENGTH];
         bzero(m1_i, PID_LENGTH + COMMITMENT_LENGTH);
@@ -762,8 +762,8 @@ int main(int argc, char* argv[]) {
   if (pid_4 > 0) {
     pid2_4 = fork();
     if(pid2_4 > 0) {
+      close(fd_4[1]);
       for (int i = 0; i < NUM_PARTIES - 1; i++) {
-        close(fd_4[1]);
         unsigned char m2_i[PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES];
         char u_i[PID_LENGTH];
         if(read(fd_4[0], m2_i, PID_LENGTH + KEX_SSBYTES + COMMITMENTCOINSBYTES)){};
