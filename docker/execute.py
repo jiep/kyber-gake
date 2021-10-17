@@ -70,12 +70,13 @@ def main():
                     os.chdir(abs_path)
                     # print(path_in_level)
                     binary = "docker network rm $(docker network ls -q --filter='name=vpcbr'); docker-compose up --force-recreate --build --remove-orphans"
-                    # output = subprocess.Popen(binary, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
+                    output = subprocess.Popen(binary, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
                     os.chdir(mycwd)
                     for party in range(n):
+                        print("Getting logs for party {}...".format(party), flush=True)
                         log_path = os.path.abspath(os.path.join(path_level, "party" + str(party) + ".log"))
                         print("log", log_path)
-                        binary2 = "docker-compose logs party{} > {}".format(party, log_path)
+                        binary2 = "docker-compose logs party{}".format(party)
                         output2 = subprocess.Popen(binary2, shell=True, stdout=subprocess.PIPE).stdout.read().decode("utf-8")
                         with open(log_path,"w") as f:
                             f.write(output2)
