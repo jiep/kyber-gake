@@ -14,18 +14,20 @@ SECURITY = [512, 768, 1024]
 TYPE = ["QROM", "ROM"]
 IMPLEMENTATIONS = ["avx2", "ref"]
 
+sns.set_palette("Set1")
 
 def plot_total_time_by_time(data, config):
 
     fig, axes = plt.subplots(2,4, figsize=(25,10), sharey=False)
     fig.suptitle('Total time')
-    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+    fig.subplots_adjust(hspace=0.5, wspace=0.2)
 
     for (j, impl) in enumerate(IMPLEMENTATIONS):
         df = data[data['implementation'] == impl]
         for (i, sec) in enumerate(SECURITY):
             df2 = df[df["security"] == sec]
             df2 = df2[['parties', 'type', 'time_total']]
+            df2['time_total'] = df2['time_total']/df2['parties']
 
             if i == 0:
                 axes[j,i].text(1, 0.5, impl, horizontalalignment='center', verticalalignment='center', transform=axes[j,i].transAxes)
@@ -33,7 +35,7 @@ def plot_total_time_by_time(data, config):
                 axes[j,i].axis('off')
 
 
-            sns.lineplot(ax=axes[j,i+1], x="parties", y="time_total", hue="type", data=df2)
+            sns.lineplot(ax=axes[j,i+1], x="parties", y="time_total", hue="type", style="type", data=df2, markers=True, dashes=False)
             axes[j,i+1].set(xlabel='Number of parties', ylabel='Total time (seconds)')
             axes[j,i+1].set_title('Security level: {}'.format(sec))
             axes[j,i+1].legend(loc='upper left')
@@ -47,7 +49,7 @@ def plot_total_time_by_round(data, config):
 
     fig, axes = plt.subplots(2,4, figsize=(25,10))
     fig.suptitle('Percentage of total time per round')
-    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+    fig.subplots_adjust(hspace=0.5, wspace=0.2)
 
     for (j, impl) in enumerate(IMPLEMENTATIONS):
         df = data[data['implementation'] == impl]
@@ -59,15 +61,15 @@ def plot_total_time_by_round(data, config):
 
             # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             #     print(df2)
-
             if i == 0:
                 axes[j,i].text(1, 0.5, impl, horizontalalignment='center', verticalalignment='center', transform=axes[j,i].transAxes)
                 axes[j,i].text(0, 0.5, 'Implementation', horizontalalignment='center', verticalalignment='center', transform=axes[j,i].transAxes)
                 axes[j,i].axis('off')
 
-            sns.boxplot(ax=axes[j,i+1], x="Round", y="Percentage", hue="type", data=df2)
+            sns.violinplot(ax=axes[j,i+1], x="Round", y="Percentage", hue="type", data=df2, linewidth=0, split=True, inner="quart")
             axes[j,i+1].set_title('Security level: {}'.format(sec))
             axes[j,i+1].legend(loc='upper left')
+            axes[j,i+1].set(ylim=(0, 100))
 
     figname = "{}/totaltime_round.png".format(config["OUTPUT_FOLDER"])
     fig.savefig(figname)
@@ -77,7 +79,7 @@ def plot_speed_commitments(data, config):
 
     fig, axes = plt.subplots(2,3, figsize=(20,10))
     fig.suptitle('Commitment operations')
-    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+    fig.subplots_adjust(hspace=0.5, wspace=0.2)
 
     commitment_vars = ['time_commit', 'time_check']
     commitment_vars_names = ['Commitment time', 'Check commitment']
@@ -90,13 +92,12 @@ def plot_speed_commitments(data, config):
 
             # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             #     print(df2)
-
             if i == 0:
                 axes[j,i].text(1, 0.5, impl, horizontalalignment='center', verticalalignment='center', transform=axes[j,i].transAxes)
                 axes[j,i].text(0, 0.5, 'Implementation', horizontalalignment='center', verticalalignment='center', transform=axes[j,i].transAxes)
                 axes[j,i].axis('off')
 
-            sns.boxplot(ax=axes[j,i+1], x="security", y=str(var), hue="type", data=df2)
+            sns.violinplot(ax=axes[j,i+1], x="security", y=str(var), hue="type", data=df2, linewidth=0, split=True, inner="quart")
             axes[j,i+1].set_title(commitment_vars_names[i])
             axes[j,i+1].legend(loc='upper left')
             axes[j,i+1].set(xlabel='Security level', ylabel='Time (milliseconds)')
@@ -110,7 +111,7 @@ def plot_speed_2_ake(data, config):
 
     fig, axes = plt.subplots(2,4, figsize=(25,10))
     fig.suptitle('2-AKE operations')
-    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+    fig.subplots_adjust(hspace=0.5, wspace=0.2)
 
     commitment_vars = ['time_init', 'time_der_resp', 'time_der_init']
     commitment_vars_names = ['Init time', 'Der_resp time', 'Der_init time']
@@ -129,7 +130,7 @@ def plot_speed_2_ake(data, config):
                 axes[j,i].text(0, 0.5, 'Implementation', horizontalalignment='center', verticalalignment='center', transform=axes[j,i].transAxes)
                 axes[j,i].axis('off')
 
-            sns.boxplot(ax=axes[j,i+1], x="security", y=str(var), hue="type", data=df2)
+            sns.violinplot(ax=axes[j,i+1], x="security", y=str(var), hue="type", data=df2, linewidth=0, split=True, inner="quart")
             axes[j,i+1].set_title(commitment_vars_names[i])
             axes[j,i+1].legend(loc='upper left')
             axes[j,i+1].set(xlabel='Security level', ylabel='Time (milliseconds)')
@@ -142,7 +143,7 @@ def plot_speed_kem(data, config):
 
     fig, axes = plt.subplots(2,4, figsize=(25,10))
     fig.suptitle('KEM operations')
-    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+    fig.subplots_adjust(hspace=0.5, wspace=0.2)
 
     commitment_vars = ['time_keygen', 'time_encaps', 'time_decaps']
     commitment_vars_names = ['Key generation time', 'Encapsulation time', 'Decapsulation time']
@@ -161,7 +162,7 @@ def plot_speed_kem(data, config):
                 axes[j,i].text(0, 0.5, 'Implementation', horizontalalignment='center', verticalalignment='center', transform=axes[j,i].transAxes)
                 axes[j,i].axis('off')
 
-            sns.boxplot(ax=axes[j,i+1], x="security", y=str(var), hue="type", data=df2)
+            sns.violinplot(ax=axes[j,i+1], x="security", y=str(var), hue="type", data=df2, linewidth=0, split=True, inner="quart")
             axes[j,i+1].set_title(commitment_vars_names[i])
             axes[j,i+1].legend(loc='upper left')
             axes[j,i+1].set(xlabel='Security level', ylabel='Time (milliseconds)')
