@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: sudo apt-get install cmake make openssl
+      run: sudo apt-get install -y cmake make openssl
 
     - name: Compile and build binaries
       run: bash ./build.sh
@@ -43,7 +43,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Download dependencies
-      run: sudo apt-get install python3 virtualenv
+      run: sudo apt-get install -y python3 virtualenv
 
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v2
