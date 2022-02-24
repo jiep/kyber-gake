@@ -5,6 +5,7 @@
 #include "indcpa.h"
 #include "utils.h"
 #include "kex.h"
+#include "ds_benchmark.h"
 
 int main() {
 
@@ -20,25 +21,40 @@ int main() {
   unsigned char K[KEX_SSBYTES];
   unsigned char K_prime[KEX_SSBYTES];
 
-  for (int k = 0; k < 1000; k++) {
-    indcpa_keypair(pki, ski);
-    indcpa_keypair(pkj, skj);
+  indcpa_keypair(pki, ski);
+  indcpa_keypair(pkj, skj);
 
-    int i = 1;
-    int j = 2;
+  int ik = 1;
+  int jk = 2;
+  int iterations = 10000;
 
-    init(pkj, M, st);
+  PRINT_TIMER_HEADER
 
-    der_resp(skj, pki, pkj, M, i, j, K, M_prime);
+  TIME_OPERATION_ITERATIONS(
+    init(pkj, M, st),
+    "init",
+    iterations
+  )
 
-    der_init(ski, pki, M_prime, st, i, j, K_prime);
+  TIME_OPERATION_ITERATIONS(
+    der_resp(skj, pki, pkj, M, ik, jk, K, M_prime),
+    "der_resp",
+    iterations
+  )
 
-    if(memcmp(K, K_prime, KEX_SSBYTES) != 0) {
-      printf("Error! \n");
-      return 1;
-    }
-  }
+  TIME_OPERATION_ITERATIONS(
+    der_init(ski, pki, M_prime, st, ik, jk, K_prime),
+    "der_init",
+    iterations
+  )
 
-  printf("OK!\n");
+  PRINT_TIMER_FOOTER
+
+  // if(memcmp(K, K_prime, KEX_SSBYTES) != 0) {
+  //   printf("Error! \n");
+  //   return 1;
+  // }
+
+  // printf("OK!\n");
   return 0;
 }
