@@ -1,4 +1,4 @@
-# Kyber-based Group Authenticated Group Key Exchange (GAKE)
+# Compiled-Kyber Group Authenticated Group Key Exchange (GAKE)
 
 ![Build](https://github.com/jiep/kyber/workflows/Build/badge.svg)
 
@@ -80,30 +80,61 @@ Code contains two implementations of the GAKE: `ref` and `avx2`. Test programs a
 
 Latest performance results can be found on [Releases](https://github.com/jiep/kyber-gake/releases) under folder `results`.
 
-### Atomic operations
+### KEM
 
-#### KEM
+#### ref
 
-![KEM](./imgs/kem.png)
+![KEM ref](./imgs/totaltime_kem_ref.png)
 
-#### Commitment
+#### avx2
 
-![Commitment](./imgs/commitment.png)
+![KEM avx2](./imgs/totaltime_kem_avx2.png)
 
-#### AKE
 
-![AKE](./imgs/ake.png)
+### Commitment
 
-### GAKE performance
+#### ref
 
-#### Time per number of parties
+![Commitment ref](./imgs/totaltime_commitment_ref.png)
 
-![GAKE parties](./imgs/totaltime.png)
+#### avx2
 
-#### Time per round
+![Commitment ref](./imgs/totaltime_commitment_avx2.png)
 
-![GAKE round](./imgs/rounds.png)
+### 2-AKE
+
+#### ref
+
+![2-AKE ref](./imgs/totaltime_2_ake_ref.png)
+
+#### avx2
+
+![2-AKE avx2](./imgs/totaltime_2_ake_avx2.png)
+
+## GAKE performance
+
+### Time per number of parties
+
+#### ref
+
+![GAKE parties ref](./imgs/totaltime_ref.png)
+
+#### avx2
+
+![GAKE parties avx2](./imgs/totaltime_avx2.png)
+
+### Time per round
+
+#### ref
+
+![GAKE round ref](./imgs/totaltime_round_ref.png)
+
+#### avx2
+
+![GAKE round avx2](./imgs/totaltime_round_avx2.png)
+
 
 ## References
 
-* Escribano Pablos, J.I.; González Vasco, M.I.; Marriaga, M.E.; Pérez del Pozo, Á.L. Compiled Constructions towards Post-Quantum Group Key Exchange: A Design from Kyber. Mathematics 2020, 8, 1853.
+* Escribano Pablos, J.I.; González Vasco, M.I.; Marriaga, M.E.; Pérez del Pozo, Á.L. "Compiled Constructions towards Post-Quantum Group Key Exchange: A Design from Kyber," 2020 Mathematics, 8, 1853, doi: 10.3390/math8101853
+* Bos, J. et al., "CRYSTALS - Kyber: A CCA-Secure Module-Lattice-Based KEM," 2018 IEEE European Symposium on Security and Privacy (EuroS&P), 2018, pp. 353-367, doi: 10.1109/EuroSP.2018.00032.
